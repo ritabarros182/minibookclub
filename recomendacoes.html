@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Recomendações · Mini Book Club</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Caveat:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="mbc.css" />
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+(function(){
+  try {
+    var s = JSON.parse(localStorage.getItem('mbc_session'));
+    if (!s || !s.name || Date.now() > s.expires) {
+      localStorage.removeItem('mbc_session');
+      location.replace('login.html');
+    }
+  } catch(e) { localStorage.removeItem('mbc_session'); location.replace('login.html'); }
+})();
+</script>
+
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+<script src="image-slot.js"></script>
+<script type="text/babel" src="mbc-atoms.jsx"></script>
+<script type="text/babel" src="mbc-auth.jsx"></script>
+<script type="text/babel" src="mbc-supabase.jsx"></script>
+<script type="text/babel" src="mbc-chrome.jsx"></script>
+<script type="text/babel" src="mbc-reviews.jsx"></script>
+<script type="text/babel" src="mbc-bingo-data.jsx"></script>
+<script type="text/babel" src="mbc-books-api.jsx"></script>
+<script type="text/babel" src="mbc-sections.jsx"></script>
+<script type="text/babel">
+function App(){
+  const ready = useDataReady();
+  if (!ready) return <LoadingScreen />;
+  return <React.Fragment><Nav current="recs" /><RecsFull /><Footer /></React.Fragment>;
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+
+</body>
+</html>

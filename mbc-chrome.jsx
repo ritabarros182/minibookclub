@@ -44,7 +44,7 @@ const PAGES = [
   { id: "estante",  label: "Estante",        href: "Estante.html" },
   { id: "girls",    label: "Girls",          href: "Girls.html" },
   { id: "bingo",    label: "Bookish Bingo",  href: "bookish-bingo.html" },
-  { id: "recs",     label: "Recomendações",  href: "Recomendações.html" },
+  { id: "recs",     label: "Recomendações",  href: "recomendacoes.html" },
   { id: "encontros",label: "Encontros",      href: "Encontros.html" },
 ];
 
