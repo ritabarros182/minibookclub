@@ -30,12 +30,7 @@ function LoadingScreen() {
             animation: 'mbc-pulse 1s ease-in-out ' + (i * 0.2) + 's infinite' }} />
         ))}
       </div>
-      <style>{"
-        @keyframes mbc-pulse {
-          0%,100% { opacity: 0.2; transform: scale(1); }
-          50%      { opacity: 0.8; transform: scale(1.3); }
-        }
-      "}</style>
+      <style>{"@keyframes mbc-pulse { 0%,100% { opacity: 0.2; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.3); } }"}</style>
     </div>
   );
 }
