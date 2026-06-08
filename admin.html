@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin · Mini Book Club</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="mbc.css" />
+<style>
+  body { background: #f6f2e7; }
+  .admin-wrap { max-width: 820px; margin: 0 auto; padding: 32px 20px 80px; }
+  .admin-section { background: #fff; border-radius: 16px; padding: 28px; margin-bottom: 24px; border: 1px solid #e8e4d8; }
+  .admin-section h2 { font-family: 'DM Serif Display',serif; font-size: 22px; margin: 0 0 20px; }
+  .form-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+  .form-row label { font-family: 'Bricolage Grotesque',sans-serif; font-size: 13px; font-weight: 600; color: #5a5248; }
+  .form-row input, .form-row select, .form-row textarea {
+    border: 2px solid #d4cfc2; border-radius: 10px; padding: 10px 12px;
+    font-family: 'Bricolage Grotesque',sans-serif; font-size: 15px; background: #f9f7f2;
+    outline: none; width: 100%; box-sizing: border-box; transition: border-color 0.15s;
+  }
+  .form-row input:focus, .form-row select:focus, .form-row textarea:focus { border-color: #191512; }
+  .form-row textarea { resize: vertical; min-height: 80px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  .btn-primary { background: #191512; color: #f6f2e7; border: none; border-radius: 10px;
+    padding: 12px 24px; font-family: 'Bricolage Grotesque',sans-serif; font-weight: 700;
+    font-size: 14px; cursor: pointer; transition: opacity 0.15s; }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn-ghost { background: transparent; color: #5a5248; border: 1.5px solid #d4cfc2;
+    border-radius: 10px; padding: 10px 20px; font-family: 'Bricolage Grotesque',sans-serif;
+    font-weight: 600; font-size: 13px; cursor: pointer; transition: border-color 0.15s; }
+  .btn-ghost:hover { border-color: #191512; }
+  .success-msg { color: #1f6b3b; font-family: 'Bricolage Grotesque',sans-serif;
+    font-size: 13px; font-weight: 600; margin-top: 10px; }
+  .error-msg { color: #e8362a; font-family: 'Bricolage Grotesque',sans-serif;
+    font-size: 13px; margin-top: 10px; }
+  .meeting-row { display: flex; align-items: center; gap: 12px; padding: 12px 0;
+    border-bottom: 1px solid #f0ede6; }
+  .meeting-row:last-child { border-bottom: none; }
+  .meeting-month { font-family: 'Space Mono',monospace; font-size: 12px; font-weight: 700;
+    width: 44px; color: #8a8270; flex-shrink: 0; }
+  .meeting-book { font-family: 'Bricolage Grotesque',sans-serif; font-size: 14px;
+    font-weight: 600; flex: 1; }
+  .tag { font-family: 'Space Mono',monospace; font-size: 10px; padding: 2px 8px;
+    border-radius: 20px; background: #f0ede6; color: #5a5248; white-space: nowrap; }
+  .result-card { display: flex; gap: 12px; padding: 12px; border-radius: 10px; cursor: pointer;
+    border: 2px solid #e8e4d8; background: #fff; transition: border-color 0.15s; }
+  .result-card:hover { border-color: #191512; }
+  .result-card.selected { border-color: #191512; background: #f9f7f2; }
+  .year-filter { display: flex; gap: 8px; margin-bottom: 20px; }
+  .year-btn { all: unset; cursor: pointer; padding: '6px 14px'; border-radius: 8px;
+    font-family: 'Space Mono',monospace; font-size: 12px; font-weight: 700;
+    background: #f0ede6; color: #5a5248; padding: 6px 14px; transition: all 0.15s; }
+  .year-btn.active { background: #191512; color: #f6f2e7; }
+</style>
+</head>
+<body>
+
+<script>
+(function(){
+  try {
+    var s = JSON.parse(localStorage.getItem('mbc_session'));
+    if (!s || !s.name || Date.now() > s.expires) {
+      localStorage.removeItem('mbc_session');
+      location.replace('login.html');
+      return;
+    }
+    if (s.name !== 'Rita') {
+      location.replace('index.html');
+    }
+  } catch(e) {
+    localStorage.removeItem('mbc_session');
+    location.replace('login.html');
+  }
+})();
+</script>
+
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+<script type="text/babel" src="mbc-atoms.jsx"></script>
+<script type="text/babel" src="mbc-auth.jsx"></script>
+<script type="text/babel" src="mbc-books-api.jsx"></script>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const H = () => ({
+  apikey:          SUPABASE_KEY,
+  Authorization:   'Bearer ' + SUPABASE_KEY,
+  'Content-Type':  'application/json',
+});
+const sb = (path, opts = {}) =>
+  fetch(SUPABASE_URL + '/rest/v1/' + path, { headers: H(), ...opts });
+
+const MEMBERS = ['Rita','Catarina V.','Cláudia','Filipa','Daniela','Juliana','Elizabete','Luísa','Beatriz','Carolina','Catarina S.','Maria','Marta','Nádia'];
+
+// ── Pesquisa Google Books ────────────────────────────────────────────────────
+function BookSearch({ onSelect }) {
+  const [search, setSearch]   = useState('');
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [selected, setSelected] = useState(null);
+
+  async function doSearch() {
+    if (!search.trim()) return;
+    setLoading(true); setResults([]);
+    try {
+      const res = await fetch('https://www.googleapis.com/books/v1/volumes?q=' +
+        encodeURIComponent(search) + '&maxResults=6&key=' + GOOGLE_BOOKS_KEY);
+      const data = await res.json();
+      setResults((data.items || []).map(item => ({
+        gid:      item.id,
+        title:    item.volumeInfo.title,
+        author:   (item.volumeInfo.authors || []).join(', '),
+        synopsis: item.volumeInfo.description?.replace(/<[^>]+>/g, '').slice(0, 600) || '',
+        cover:    item.volumeInfo.imageLinks?.thumbnail?.replace('http:','https:') || null,
+        genre:    (item.volumeInfo.categories || [])[0] || '',
+        pages:    item.volumeInfo.pageCount || null,
+        year:     item.volumeInfo.publishedDate?.slice(0, 4) || null,
+      })));
+    } catch(e) { console.error(e); }
+    setLoading(false);
+  }
+
+  function pick(r) {
+    setSelected(r);
+    onSelect(r);
+  }
+
+  return (
+    <div>
+      <div className="form-row">
+        <label>Pesquisar livro no Google Books</label>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input value={search} onChange={e => setSearch(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && doSearch()}
+            placeholder="título ou autora…" style={{ flex: 1 }} />
+          <button className="btn-ghost" onClick={doSearch} disabled={loading}>
+            {loading ? '…' : 'Pesquisar'}
+          </button>
+        </div>
+      </div>
+
+      {results.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+          {results.map((r, i) => (
+            <div key={i} className={'result-card' + (selected?.gid === r.gid ? ' selected' : '')}
+              onClick={() => pick(r)}>
+              {r.cover && <img src={r.cover} alt="" style={{ width: 44, height: 64, objectFit: 'cover', borderRadius: 4, flexShrink: 0 }} />}
+              <div>
+                <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontWeight: 700, fontSize: 15 }}>{r.title}</div>
+                <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 13, color: '#8a8270' }}>{r.author}</div>
+                {r.year && <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 11, color: '#aaa5aa', marginTop: 2 }}>{r.year}{r.pages ? ` · ${r.pages} pág.` : ''}</div>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Adicionar / editar livro do mês ─────────────────────────────────────────
+function BookForm({ meetings, books, onDone }) {
+  const [meetingId, setMeetingId]   = useState('');
+  const [newBook, setNewBook]       = useState(null);   // livro novo da pesquisa
+  const [replacing, setReplacing]   = useState(false);  // modo substituição
+  const [picker, setPicker]         = useState('');
+  const [spineColor, setSpineColor] = useState('#191512');
+  const [saving, setSaving]         = useState(false);
+  const [msg, setMsg]               = useState('');
+
+  const currentMeeting = meetings.find(x => x.id === meetingId);
+  const currentBook    = currentMeeting?.book_id ? books.find(b => b.id === currentMeeting.book_id) : null;
+  const showSearch     = !currentBook || replacing;
+
+  useEffect(() => {
+    const m = meetings.find(x => x.id === meetingId);
+    if (m) setPicker(m.picker_name || '');
+    setNewBook(null);
+    setReplacing(false);
+  }, [meetingId]);
+
+  async function handleSave() {
+    if (!meetingId || !picker) { setMsg('Seleciona o mês e quem escolheu.'); return; }
+    if (!currentBook && !newBook) { setMsg('Pesquisa e seleciona um livro.'); return; }
+    if (replacing && !newBook) { setMsg('Pesquisa e seleciona o novo livro.'); return; }
+    setSaving(true); setMsg('');
+    try {
+      let bookId = currentBook?.id;
+
+      if (newBook) {
+        // criar ou reutilizar livro
+        const existing = books.find(b => b.title === newBook.title && b.author === newBook.author);
+        bookId = existing?.id;
+        if (!bookId) {
+          const r = await sb('books', {
+            method: 'POST',
+            headers: { ...H(), Prefer: 'return=representation' },
+            body: JSON.stringify({
+              title:       newBook.title,
+              author:      newBook.author,
+              synopsis:    newBook.synopsis,
+              cover_url:   newBook.cover,
+              genre:       newBook.genre || null,
+              spine_color: spineColor,
+              spine_fg:    '#f6f2e7',
+            }),
+          });
+          if (!r.ok) throw new Error('Erro ao criar livro: ' + r.status);
+          const data = await r.json();
+          bookId = data[0]?.id;
+          if (!bookId) throw new Error('Sem ID do livro criado.');
+        }
+      }
+
+      const patch = { picker_name: picker };
+      if (bookId) patch.book_id = bookId;
+
+      const r2 = await sb('meetings?id=eq.' + meetingId, {
+        method: 'PATCH',
+        headers: { ...H(), Prefer: 'return=minimal' },
+        body: JSON.stringify(patch),
+      });
+      if (!r2.ok) throw new Error('Erro ao guardar: ' + r2.status);
+      setMsg('✓ Guardado!');
+      setTimeout(onDone, 1200);
+    } catch(e) { setMsg('Erro: ' + e.message); }
+    setSaving(false);
+  }
+
+  const canSave = !saving && meetingId && picker &&
+    (currentBook
+      ? (!replacing || newBook)   // tem livro: pode guardar sem novo livro, ou com novo se estiver em modo substituição
+      : newBook);                 // sem livro: precisa de pesquisa
+
+  return (
+    <div>
+      <div className="form-row">
+        <label>Mês</label>
+        <select value={meetingId} onChange={e => setMeetingId(e.target.value)}>
+          <option value="">Selecionar mês…</option>
+          <option disabled>──── sem livro ────</option>
+          {meetings.filter(m => !m.book_id).map(m =>
+            <option key={m.id} value={m.id}>{m.month_full} {m.year}</option>)}
+          <option disabled>──── com livro ────</option>
+          {meetings.filter(m => m.book_id).map(m =>
+            <option key={m.id} value={m.id}>{m.month_full} {m.year}</option>)}
+        </select>
+      </div>
+
+      {/* Livro atual — mostra e oferece substituição */}
+      {currentBook && !replacing && (
+        <div style={{ background: '#f0f7f0', border: '1.5px solid #b8ddb8', borderRadius: 10, padding: 12, marginBottom: 16, display: 'flex', gap: 12, alignItems: 'center' }}>
+          {currentBook.cover_url && (
+            <img src={currentBook.cover_url} alt="" style={{ width: 40, height: 58, objectFit: 'cover', borderRadius: 4, flexShrink: 0 }}
+              onError={e => e.target.style.display = 'none'} />
+          )}
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontWeight: 700, fontSize: 14 }}>{currentBook.title}</div>
+            <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 13, color: '#5a5248' }}>{currentBook.author}</div>
+          </div>
+          <button onClick={() => setReplacing(true)}
+            style={{ all: 'unset', cursor: 'pointer', fontFamily: "'Bricolage Grotesque',sans-serif",
+              fontSize: 12, color: '#8a8270', textDecoration: 'underline' }}>
+            substituir livro
+          </button>
+        </div>
+      )}
+
+      <div className="form-row">
+        <label>Quem escolheu</label>
+        <select value={picker} onChange={e => setPicker(e.target.value)}>
+          <option value="">Selecionar…</option>
+          {MEMBERS.map(n => <option key={n}>{n}</option>)}
+        </select>
+      </div>
+
+      {showSearch && (
+        <>
+          {replacing && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+              <button onClick={() => { setReplacing(false); setNewBook(null); }}
+                style={{ all: 'unset', cursor: 'pointer', fontFamily: "'Bricolage Grotesque',sans-serif",
+                  fontSize: 12, color: '#8a8270', textDecoration: 'underline' }}>
+                cancelar substituição
+              </button>
+            </div>
+          )}
+          <BookSearch onSelect={setNewBook} />
+          {newBook && (
+            <div style={{ background: '#f9f7f2', border: '1px solid #e8e4d8', borderRadius: 10, padding: 12, marginBottom: 16 }}>
+              <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontWeight: 700, marginBottom: 4 }}>
+                ✓ {newBook.title}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
+                <label style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 13, fontWeight: 600, color: '#5a5248' }}>
+                  Cor da lombada
+                </label>
+                <input type="color" value={spineColor} onChange={e => setSpineColor(e.target.value)}
+                  style={{ width: 48, height: 34, border: 'none', cursor: 'pointer', borderRadius: 6 }} />
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      <button className="btn-primary" onClick={handleSave} disabled={!canSave}>
+        {saving ? 'A guardar…' : 'Guardar'}
+      </button>
+      {msg && <p className={msg.startsWith('✓') ? 'success-msg' : 'error-msg'}>{msg}</p>}
+    </div>
+  );
+}
+
+// ── Editar dados de um livro existente ───────────────────────────────────────
+function EditBookForm({ books, meetings, onDone }) {
+  const [bookId, setBookId]       = useState('');
+  const [form, setForm]           = useState({ title: '', author: '', synopsis: '', cover_url: '', genre: '', spine_color: '#191512' });
+  const [pickerName, setPickerName] = useState('');
+  const [saving, setSaving]       = useState(false);
+  const [msg, setMsg]             = useState('');
+
+  useEffect(() => {
+    const b = books.find(x => x.id === bookId);
+    if (b) {
+      setForm({
+        title:       b.title       || '',
+        author:      b.author      || '',
+        synopsis:    b.synopsis    || '',
+        cover_url:   b.cover_url   || '',
+        genre:       b.genre       || '',
+        spine_color: b.spine_color || '#191512',
+      });
+      const m = meetings.find(x => x.book_id === bookId);
+      setPickerName(m?.picker_name || '');
+    }
+  }, [bookId]);
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  async function handleSave() {
+    if (!bookId) return;
+    setSaving(true); setMsg('');
+    try {
+      // Guardar dados do livro
+      const r1 = await sb('books?id=eq.' + bookId, {
+        method: 'PATCH',
+        headers: { ...H(), Prefer: 'return=minimal' },
+        body: JSON.stringify(form),
+      });
+      if (!r1.ok) throw new Error('Erro ao guardar livro: ' + r1.status);
+
+      // Guardar picker_name no meeting correspondente
+      const meeting = meetings.find(m => m.book_id === bookId);
+      if (meeting) {
+        const r2 = await sb('meetings?id=eq.' + meeting.id, {
+          method: 'PATCH',
+          headers: { ...H(), Prefer: 'return=minimal' },
+          body: JSON.stringify({ picker_name: pickerName || null }),
+        });
+        if (!r2.ok) throw new Error('Erro ao guardar picker: ' + r2.status);
+      }
+
+      setMsg('✓ Guardado!');
+      setTimeout(onDone, 1200);
+    } catch(e) { setMsg('Erro: ' + e.message); }
+    setSaving(false);
+  }
+
+  const bookWithYear = (book) => {
+    const m = meetings.find(x => x.book_id === book.id);
+    return m ? m.year : '?';
+  };
+
+  return (
+    <div>
+      <div className="form-row">
+        <label>Livro</label>
+        <select value={bookId} onChange={e => setBookId(e.target.value)}>
+          <option value="">Selecionar livro…</option>
+          {[...books].sort((a, b) => {
+            const ya = meetings.find(m => m.book_id === a.id)?.year || 0;
+            const yb = meetings.find(m => m.book_id === b.id)?.year || 0;
+            return yb - ya || a.title.localeCompare(b.title);
+          }).map(b => {
+            const yr = bookWithYear(b);
+            return <option key={b.id} value={b.id}>{yr} · {b.title}</option>;
+          })}
+        </select>
+      </div>
+
+      {bookId && (
+        <div>
+          <div className="form-grid">
+            <div className="form-row">
+              <label>Título</label>
+              <input value={form.title} onChange={e => set('title', e.target.value)} />
+            </div>
+            <div className="form-row">
+              <label>Autora</label>
+              <input value={form.author} onChange={e => set('author', e.target.value)} />
+            </div>
+          </div>
+          <div className="form-row">
+            <label>Quem escolheu</label>
+            <select value={pickerName} onChange={e => setPickerName(e.target.value)}>
+              <option value="">Selecionar…</option>
+              {MEMBERS.map(n => <option key={n}>{n}</option>)}
+            </select>
+          </div>
+          <div className="form-row">
+            <label>Sinopse</label>
+            <textarea value={form.synopsis} onChange={e => set('synopsis', e.target.value)} rows={4} />
+          </div>
+          <div className="form-grid">
+            <div className="form-row">
+              <label>URL da capa</label>
+              <input value={form.cover_url} onChange={e => set('cover_url', e.target.value)} placeholder="https://…" />
+            </div>
+            <div className="form-row">
+              <label>Género</label>
+              <input value={form.genre} onChange={e => set('genre', e.target.value)} placeholder="ex: Fiction, Romance…" />
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+            <label style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 13, fontWeight: 600, color: '#5a5248' }}>
+              Cor da lombada
+            </label>
+            <input type="color" value={form.spine_color} onChange={e => set('spine_color', e.target.value)}
+              style={{ width: 48, height: 34, border: 'none', cursor: 'pointer', borderRadius: 6 }} />
+            {form.cover_url && (
+              <img src={form.cover_url} alt="" style={{ height: 60, borderRadius: 4, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
+                onError={e => e.target.style.display = 'none'} />
+            )}
+          </div>
+
+          <button className="btn-primary" onClick={handleSave} disabled={saving}>
+            {saving ? 'A guardar…' : 'Guardar alterações'}
+          </button>
+          {msg && <p className={msg.startsWith('✓') ? 'success-msg' : 'error-msg'}>{msg}</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Editar encontro (data, local, restaurante, tipo) ─────────────────────────
+function MeetingForm({ meetings, onDone }) {
+  const [meetingId, setMeetingId] = useState('');
+  const [form, setForm]           = useState({ meeting_date: '', end_date: '', location: '', restaurant: '', meeting_type: '' });
+  const [saving, setSaving]       = useState(false);
+  const [msg, setMsg]             = useState('');
+  const fileRef                   = useRef();
+  const [photoUploading, setPhotoUploading] = useState(false);
+
+  useEffect(() => {
+    const m = meetings.find(x => x.id === meetingId);
+    if (m) setForm({
+      meeting_date: m.meeting_date || '',
+      end_date:     m.end_date     || '',
+      location:     m.location     || '',
+      restaurant:   m.restaurant   || '',
+      meeting_type: m.meeting_type || '',
+    });
+  }, [meetingId]);
+
+  async function handleSave() {
+    if (!meetingId) return;
+    setSaving(true); setMsg('');
+    try {
+      await sb('meetings?id=eq.' + meetingId, {
+        method: 'PATCH',
+        headers: { ...H(), Prefer: 'return=minimal' },
+        body: JSON.stringify(form),
+      });
+      setMsg('✓ Guardado!');
+      setTimeout(onDone, 1200);
+    } catch(e) { setMsg('Erro: ' + e.message); }
+    setSaving(false);
+  }
+
+  async function handlePhoto(e) {
+    const file = e.target.files[0];
+    if (!file || !meetingId) return;
+    setPhotoUploading(true);
+    const ext  = file.name.split('.').pop();
+    const path = meetingId + '.' + ext;
+    const r = await fetch(SUPABASE_URL + '/storage/v1/object/meeting-photos/' + path, {
+      method: 'POST', headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': file.type },
+      body: file,
+    });
+    if (r.ok) {
+      const url = SUPABASE_URL + '/storage/v1/object/public/meeting-photos/' + path;
+      await sb('meetings?id=eq.' + meetingId, {
+        method: 'PATCH', headers: { ...H(), Prefer: 'return=minimal' },
+        body: JSON.stringify({ photo_url: url }),
+      });
+      setMsg('✓ Foto guardada!');
+    }
+    setPhotoUploading(false);
+  }
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  // agrupar meetings por ano
+  const byYear = meetings.reduce((acc, m) => {
+    (acc[m.year] = acc[m.year] || []).push(m);
+    return acc;
+  }, {});
+
+  return (
+    <div>
+      <div className="form-row">
+        <label>Mês</label>
+        <select value={meetingId} onChange={e => setMeetingId(e.target.value)}>
+          <option value="">Selecionar mês…</option>
+          {Object.keys(byYear).sort((a, b) => b - a).map(yr => (
+            <React.Fragment key={yr}>
+              <option disabled>──── {yr} ────</option>
+              {byYear[yr].map(m => <option key={m.id} value={m.id}>{m.month_full}</option>)}
+            </React.Fragment>
+          ))}
+        </select>
+      </div>
+
+      {meetingId && (
+        <div>
+          <div className="form-grid">
+            <div className="form-row">
+              <label>Data do encontro</label>
+              <input type="date" value={form.meeting_date} onChange={e => set('meeting_date', e.target.value)} />
+            </div>
+            <div className="form-row">
+              <label>Data de fim (retiros)</label>
+              <input type="date" value={form.end_date} onChange={e => set('end_date', e.target.value)} />
+            </div>
+            <div className="form-row">
+              <label>Tipo</label>
+              <select value={form.meeting_type} onChange={e => set('meeting_type', e.target.value)}>
+                <option value="">—</option>
+                {['Jantar','Brunch','Almoço','Retiro'].map(t => <option key={t}>{t}</option>)}
+              </select>
+            </div>
+            <div className="form-row">
+              <label>Restaurante / Local</label>
+              <input value={form.restaurant} onChange={e => set('restaurant', e.target.value)} placeholder="nome do restaurante" />
+            </div>
+          </div>
+          <div className="form-row">
+            <label>Morada</label>
+            <input value={form.location} onChange={e => set('location', e.target.value)} placeholder="rua, cidade" />
+          </div>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
+            <button className="btn-ghost" onClick={() => fileRef.current.click()}>
+              {photoUploading ? 'A guardar foto…' : '📷 Foto do encontro'}
+            </button>
+            <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhoto} />
+          </div>
+          <button className="btn-primary" onClick={handleSave} disabled={saving}>
+            {saving ? 'A guardar…' : 'Guardar'}
+          </button>
+          {msg && <p className={msg.startsWith('✓') ? 'success-msg' : 'error-msg'}>{msg}</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Lista de todos os meses ──────────────────────────────────────────────────
+function MeetingsList({ meetings, books }) {
+  const [filterYear, setFilterYear] = useState('all');
+  const years = [...new Set(meetings.map(m => m.year))].sort((a, b) => b - a);
+  const filtered = filterYear === 'all' ? meetings : meetings.filter(m => m.year == filterYear);
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+        <button className={'year-btn' + (filterYear === 'all' ? ' active' : '')} onClick={() => setFilterYear('all')}>Todos</button>
+        {years.map(y => (
+          <button key={y} className={'year-btn' + (filterYear === y ? ' active' : '')} onClick={() => setFilterYear(y)}>{y}</button>
+        ))}
+      </div>
+      {filtered.map(m => {
+        const book = books.find(b => b.id === m.book_id);
+        return (
+          <div key={m.id} className="meeting-row">
+            <span className="meeting-month" style={{ width: 56 }}>{m.month_code} {m.year}</span>
+            <div style={{ flex: 1 }}>
+              <div className="meeting-book">{book ? book.title : <span style={{ color: '#aaa' }}>sem livro</span>}</div>
+              {book && <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 12, color: '#8a8270' }}>{book.author}</div>}
+            </div>
+            {m.meeting_date && <span className="tag">{m.meeting_date}</span>}
+            {m.meeting_type && <span className="tag">{m.meeting_type}</span>}
+            {m.picker_name  && <span className="tag" style={{ background: '#e8f4e8', color: '#1f6b3b' }}>✦ {m.picker_name}</span>}
+            {m.is_current   && <span className="tag" style={{ background: '#c2e84f', color: '#191512' }}>atual</span>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Gestão de Recomendações ──────────────────────────────────────────────────
+function RecsAdmin() {
+  const [recs, setRecs]     = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [msg, setMsg]       = useState('');
+
+  useEffect(() => {
+    sb('recommendations?order=created_at.desc')
+      .then(r => r.json())
+      .then(data => { setRecs(data); setLoading(false); });
+  }, []);
+
+  async function handleDelete(id) {
+    await fetch(SUPABASE_URL + '/rest/v1/recommendations?id=eq.' + id, {
+      method: 'DELETE', headers: H(),
+    });
+    setRecs(prev => prev.filter(r => r.id !== id));
+    setMsg('✓ Removida');
+    setTimeout(() => setMsg(''), 2000);
+  }
+
+  if (loading) return <p style={{ fontFamily: "'Bricolage Grotesque',sans-serif", color: '#8a8270' }}>A carregar…</p>;
+
+  return (
+    <div>
+      {msg && <p className={msg.startsWith('✓') ? 'success-msg' : 'error-msg'} style={{ marginBottom: 12 }}>{msg}</p>}
+      {recs.length === 0 && <p style={{ fontFamily: "'Bricolage Grotesque',sans-serif", color: '#8a8270' }}>Sem recomendações.</p>}
+      {recs.map(r => (
+        <div key={r.id} className="meeting-row">
+          <div style={{ flex: 1 }}>
+            <div className="meeting-book">{r.book_title}</div>
+            <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 12, color: '#8a8270' }}>
+              {r.author} · por <strong>{r.member_name}</strong>
+              {r.genre ? ` · ${r.genre}` : ''}
+            </div>
+            {r.quote && <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 13, color: '#5a5248', marginTop: 2, fontStyle: 'italic' }}>
+              "{r.quote}"
+            </div>}
+          </div>
+          <button onClick={() => handleDelete(r.id)}
+            style={{ all: 'unset', cursor: 'pointer', padding: '6px 14px', borderRadius: 8,
+              background: '#fff0f0', color: '#e8362a', fontFamily: "'Bricolage Grotesque',sans-serif",
+              fontWeight: 600, fontSize: 13, border: '1.5px solid #f4b5b0', transition: 'all 0.15s' }}
+            onMouseEnter={e => e.currentTarget.style.background = '#fee'}
+            onMouseLeave={e => e.currentTarget.style.background = '#fff0f0'}>
+            Remover
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── App principal ────────────────────────────────────────────────────────────
+function AdminApp() {
+  const [meetings, setMeetings] = useState([]);
+  const [books,    setBooks]    = useState([]);
+  const [tab,      setTab]      = useState('livro');
+  const [version,  setVersion]  = useState(0);
+
+  useEffect(() => {
+    // carregar todos os anos
+    sb('meetings?order=year.desc,sort_order.asc').then(r => r.json()).then(setMeetings);
+    sb('books?order=created_at').then(r => r.json()).then(setBooks);
+  }, [version]);
+
+  const refresh = () => setVersion(v => v + 1);
+
+  const tabs = [
+    ['livro',    '📚 Livro do mês'],
+    ['editBook', '✏️ Editar livro'],
+    ['encontro', '📅 Encontro'],
+    ['lista',    '📋 Todos os meses'],
+    ['recs',     '💬 Recomendações'],
+  ];
+
+  return (
+    <div style={{ fontFamily: "'Bricolage Grotesque', sans-serif", background: '#f6f2e7', minHeight: '100vh' }}>
+      <header style={{ background: '#fff', borderBottom: '1px solid #e8e4d8', padding: '16px 24px',
+        display: 'flex', alignItems: 'center', gap: 12 }}>
+        <BookIcon size={28} />
+        <span style={{ fontFamily: "'DM Serif Display',serif", fontSize: 22 }}>Mini Book Club</span>
+        <span style={{ color: '#8a8270', fontSize: 13 }}>· Admin</span>
+        <a href="index.html" style={{ marginLeft: 'auto', fontFamily: "'Bricolage Grotesque',sans-serif",
+          fontSize: 13, color: '#8a8270', textDecoration: 'none' }}>← voltar ao site</a>
+      </header>
+
+      <div className="admin-wrap">
+        <h1 style={{ fontFamily: "'DM Serif Display',serif", fontSize: 32, marginBottom: 24 }}>Backoffice</h1>
+
+        <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
+          {tabs.map(([id, label]) => (
+            <button key={id} onClick={() => setTab(id)} style={{
+              all: 'unset', cursor: 'pointer', padding: '10px 20px', borderRadius: 10,
+              fontFamily: "'Bricolage Grotesque',sans-serif", fontWeight: 600, fontSize: 14,
+              background: tab === id ? '#191512' : '#fff',
+              color:      tab === id ? '#f6f2e7' : '#5a5248',
+              border:     '1.5px solid ' + (tab === id ? '#191512' : '#d4cfc2'),
+              transition: 'all 0.15s',
+            }}>{label}</button>
+          ))}
+        </div>
+
+        {tab === 'livro' && (
+          <div className="admin-section">
+            <h2>Adicionar / trocar livro do mês</h2>
+            <BookForm meetings={meetings} books={books} onDone={refresh} />
+          </div>
+        )}
+
+        {tab === 'editBook' && (
+          <div className="admin-section">
+            <h2>Editar dados de um livro</h2>
+            <EditBookForm books={books} meetings={meetings} onDone={refresh} />
+          </div>
+        )}
+
+        {tab === 'encontro' && (
+          <div className="admin-section">
+            <h2>Editar encontro</h2>
+            <MeetingForm meetings={meetings} onDone={refresh} />
+          </div>
+        )}
+
+        {tab === 'lista' && (
+          <div className="admin-section">
+            <h2>Todos os meses</h2>
+            <MeetingsList meetings={meetings} books={books} />
+          </div>
+        )}
+
+        {tab === 'recs' && (
+          <div className="admin-section">
+            <h2>Recomendações</h2>
+            <RecsAdmin />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<AdminApp />);
+</script>
+</body>
+</html>

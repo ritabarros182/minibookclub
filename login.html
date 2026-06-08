@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Entrar · Mini Book Club</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Caveat:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="mbc.css" />
+<style>
+  body { margin: 0; }
+  .login-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    font-family: 'Bricolage Grotesque', sans-serif;
+  }
+  .login-card {
+    width: 100%;
+    max-width: 420px;
+    background: #fff;
+    border-radius: 20px;
+    padding: 40px 36px;
+    box-shadow: 0 6px 48px rgba(25,21,18,0.12);
+  }
+  .login-select {
+    width: 100%;
+    padding: 13px 16px;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: #191512;
+    background: #f9f7f2;
+    border: 2px solid #d4cfc2;
+    border-radius: 12px;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238a8270' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 12px;
+    transition: border-color 0.15s;
+  }
+  .login-select:focus { border-color: #191512; }
+
+  /* PIN boxes */
+  .pin-row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+  }
+  .pin-box {
+    width: 54px;
+    height: 62px;
+    text-align: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 26px;
+    font-weight: 700;
+    color: #191512;
+    background: #f9f7f2;
+    border: 2px solid #d4cfc2;
+    border-radius: 12px;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    caret-color: transparent;
+  }
+  .pin-box:focus {
+    border-color: #191512;
+    box-shadow: 0 0 0 3px rgba(25,21,18,0.08);
+  }
+  .pin-box.has-val {
+    border-color: #191512;
+    background: #fff;
+  }
+  .pin-box.error {
+    border-color: #e8362a;
+    background: #fff5f5;
+  }
+  .pin-box.shake {
+    animation: mbc-shake 0.45s ease;
+  }
+
+  @keyframes mbc-shake {
+    0%, 100% { transform: translateX(0); }
+    20%       { transform: translateX(-7px); }
+    40%       { transform: translateX(7px); }
+    60%       { transform: translateX(-7px); }
+    80%       { transform: translateX(7px); }
+  }
+  @keyframes mbc-spin {
+    to { transform: rotate(360deg); }
+  }
+</style>
+</head>
+<body>
+
+<script>
+(function(){
+  try {
+    var s = JSON.parse(localStorage.getItem('mbc_session'));
+    if (s && s.name && Date.now() < s.expires) location.replace('index.html');
+  } catch(e) {}
+})();
+</script>
+
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="mbc-atoms.jsx"></script>
+<script type="text/babel" src="mbc-auth.jsx"></script>
+
+<script type="text/babel">
+const { useState, useRef, useEffect } = React;
+
+function LoginApp() {
+  const [selected, setSelected] = useState(null);
+  const [digits, setDigits]     = useState(['', '', '', '']);
+  const [error, setError]       = useState('');
+  const [shake, setShake]       = useState(false);
+  const [loading, setLoading]   = useState(false);
+  const refs = [useRef(), useRef(), useRef(), useRef()];
+
+  const pin = digits.join('');
+
+  function handleSelect(e) {
+    const name = e.target.value;
+    const girl = MBC_GIRLS.find(g => g.name === name) || null;
+    setSelected(girl);
+    setDigits(['', '', '', '']);
+    setError('');
+    if (girl) setTimeout(() => refs[0].current && refs[0].current.focus(), 60);
+  }
+
+  function handleDigit(i, e) {
+    const raw = e.target.value.replace(/\D/g, '');
+    // pegar só o último dígito digitado (permite substituir)
+    const digit = raw.slice(-1);
+    if (!digit) return;
+    const next = [...digits];
+    next[i] = digit;
+    setDigits(next);
+    setError('');
+    if (i < 3) setTimeout(() => refs[i + 1].current && refs[i + 1].current.focus(), 0);
+  }
+
+  function handleKeyDown(i, e) {
+    if (e.key === 'Backspace') {
+      if (digits[i]) {
+        const next = [...digits]; next[i] = ''; setDigits(next);
+      } else if (i > 0) {
+        refs[i - 1].current && refs[i - 1].current.focus();
+      }
+    }
+    // permitir navegar com setas
+    if (e.key === 'ArrowLeft'  && i > 0) refs[i - 1].current.focus();
+    if (e.key === 'ArrowRight' && i < 3) refs[i + 1].current.focus();
+  }
+
+  // submeter quando os 4 dígitos estão preenchidos
+  useEffect(() => {
+    if (pin.length === 4 && selected && !loading) doLogin();
+  }, [pin]);
+
+  async function doLogin() {
+    setLoading(true);
+    const ok = await verifyPin(selected.name, pin);
+    if (ok) {
+      setMe(selected.name);
+      location.replace('index.html');
+    } else {
+      setError('PIN incorreto. Tenta outra vez.');
+      setShake(true);
+      setDigits(['', '', '', '']);
+      setLoading(false);
+      setTimeout(() => { setShake(false); refs[0].current && refs[0].current.focus(); }, 500);
+    }
+  }
+
+  const accentColor = selected ? selected.color : '#191512';
+
+  return (
+    <div className="login-page">
+      {/* Logo */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32 }}>
+        <BookIcon size={34} />
+        <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: 30, color: '#191512', lineHeight: 1 }}>
+          Mini Book Club
+        </span>
+      </div>
+
+      <div className="login-card">
+        <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 26, color: '#191512',
+          textAlign: 'center', margin: '0 0 6px' }}>
+          Bem-vinda de volta
+        </h1>
+        <p style={{ fontSize: 14, color: '#8a8270', textAlign: 'center', margin: '0 0 28px' }}>
+          Escolhe o teu nome e introduz o PIN
+        </p>
+
+        {/* Dropdown */}
+        <div style={{ position: 'relative', marginBottom: 24 }}>
+          {selected && (
+            <span style={{
+              position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
+              width: 28, height: 28, borderRadius: '50%', background: selected.color,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: "'Bricolage Grotesque',sans-serif", fontWeight: 700, fontSize: 13, color: '#fff',
+              pointerEvents: 'none', zIndex: 1,
+            }}>{selected.name[0]}</span>
+          )}
+          <select
+            className="login-select"
+            value={selected ? selected.name : ''}
+            onChange={handleSelect}
+            style={{ paddingLeft: selected ? 52 : 16 }}
+          >
+            <option value="">Quem és tu?</option>
+            {MBC_GIRLS.map(g => (
+              <option key={g.name} value={g.name}>{g.name}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* PIN */}
+        {selected && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+            <p style={{ fontSize: 14, color: '#5a5248', margin: 0, textAlign: 'center' }}>
+              PIN de <strong style={{ color: accentColor }}>{selected.name}</strong>
+            </p>
+
+            <div className="pin-row">
+              {digits.map((d, i) => (
+                <input
+                  key={i}
+                  ref={refs[i]}
+                  type="password"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={2}
+                  value={d}
+                  onChange={e => handleDigit(i, e)}
+                  onKeyDown={e => handleKeyDown(i, e)}
+                  disabled={loading}
+                  className={[
+                    'pin-box',
+                    d ? 'has-val' : '',
+                    error ? (shake ? 'error shake' : 'error') : '',
+                  ].join(' ')}
+                />
+              ))}
+            </div>
+
+            {error && (
+              <p style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 13,
+                color: '#e8362a', margin: 0 }}>{error}</p>
+            )}
+
+            {loading && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#8a8270', fontSize: 13,
+                fontFamily: "'Bricolage Grotesque',sans-serif" }}>
+                <span style={{ display: 'inline-block', width: 14, height: 14,
+                  border: '2px solid #d4cfc2', borderTopColor: '#8a8270',
+                  borderRadius: '50%', animation: 'mbc-spin 0.6s linear infinite' }} />
+                A verificar…
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <p style={{ fontFamily: "'Caveat', cursive", fontSize: 17, color: '#8a8270', marginTop: 28 }}>
+        est. 2024 · feito com livros &amp; cafés ✦
+      </p>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<LoginApp />);
+</script>
+</body>
+</html>
