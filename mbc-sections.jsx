@@ -356,7 +356,7 @@ function BingoEntry({ challenge, color, onClose, onSave }) {
         <button className="modal-close" onClick={onClose}>✕</button>
         <div style={{ padding: "30px 28px 28px" }}>
           <span className="micro" style={{ color: "var(--orange)" }}>Marcar quadrado</span>
-          <h3 style={{ margin: "6px 0 18px", fontFamily: "'DM Serif Display',serif", fontStyle: "italic", fontSize: 26, lineHeight: 1.05 }}>“{challenge}”</h3>
+          <h3 style={{ margin: "6px 0 18px", fontFamily: "'DM Serif Display',serif", fontStyle: "italic", fontSize: 26, lineHeight: 1.05 }}>"{challenge}"</h3>
           <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
             <div style={{ width: 70, height: 100, flex: "none", position: "relative", borderRadius: 8, overflow: "hidden", boxShadow: "0 6px 16px -6px rgba(25,21,18,.4)" }}>
               <MiniCover title={title || "Que livro?"} author={author || "autora"} color={color} />
@@ -536,10 +536,10 @@ function RecCard({ rec, idx, onDelete }) {
   const book = { t: rec.t, a: rec.a, bg: rec.bg, fg: rec.fg, coverUrl: cover };
 
   return (
-    <div className=”rec-card” style={{ transform: 'rotate(' + ((idx % 2 ? 1 : -1) * 1.2) + 'deg)', position: 'relative' }}>
+    <div className="rec-card" style={{ transform: 'rotate(' + ((idx % 2 ? 1 : -1) * 1.2) + 'deg)', position: 'relative' }}>
       {canDelete && (
         <button onClick={() => onDelete(rec.id)}
-          title=”Remover recomendação”
+          title="Remover recomendação"
           style={{ position: 'absolute', top: 6, right: 6, zIndex: 10, all: 'unset', cursor: 'pointer',
             width: 22, height: 22, borderRadius: '50%', background: 'rgba(232,54,42,0.85)',
             color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -548,11 +548,11 @@ function RecCard({ rec, idx, onDelete }) {
         </button>
       )}
       <Poster book={book} w={150} rot={0} />
-      <div className=”rec-by”>
-        <span className=”rec-by-name”>{rec.by}</span>
+      <div className="rec-by">
+        <span className="rec-by-name">{rec.by}</span>
         {rec.genre ? <span> · {rec.genre}</span> : null}
       </div>
-      <p className=”rec-quote hand”>”{rec.q}”</p>
+      <p className="rec-quote hand">"{rec.q}"</p>
     </div>
   );
 }
@@ -600,32 +600,32 @@ function AddRecModal({ onClose, onAdded }) {
   }
 
   const inputStyle = { width: '100%', border: '2px solid #d4cfc2', borderRadius: 10, padding: '10px 12px',
-    fontFamily: “'Bricolage Grotesque',sans-serif”, fontSize: 15, background: '#f9f7f2',
+    fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 15, background: '#f9f7f2',
     outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s' };
 
   return (
-    <div className=”modal-bg” onClick={onClose}>
-      <div className=”modal” onClick={e => e.stopPropagation()}
+    <div className="modal-bg" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}
         style={{ maxHeight: '88vh', overflowY: 'auto' }}>
-        <button className=”modal-close” onClick={onClose}>✕</button>
-        <h3 style={{ fontFamily: “'DM Serif Display',serif”, fontSize: 24, margin: '0 0 20px' }}>
+        <button className="modal-close" onClick={onClose}>✕</button>
+        <h3 style={{ fontFamily: "'DM Serif Display',serif", fontSize: 24, margin: '0 0 20px' }}>
           A tua recomendação
         </h3>
 
         {/* Pesquisa */}
         <div style={{ marginBottom: 12 }}>
-          <label style={{ display: 'block', fontFamily: “'Bricolage Grotesque',sans-serif”,
+          <label style={{ display: 'block', fontFamily: "'Bricolage Grotesque',sans-serif",
             fontSize: 13, fontWeight: 600, color: '#5a5248', marginBottom: 6 }}>
             Pesquisar livro
           </label>
           <div style={{ display: 'flex', gap: 8 }}>
             <input value={search} onChange={e => setSearch(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && doSearch()}
-              placeholder=”título ou autora…” style={{ ...inputStyle, flex: 1 }} />
+              placeholder="título ou autora…" style={{ ...inputStyle, flex: 1 }} />
             <button onClick={doSearch} disabled={searching}
               style={{ all: 'unset', cursor: searching ? 'wait' : 'pointer', padding: '10px 18px',
                 borderRadius: 10, background: '#191512', color: '#f6f2e7', flexShrink: 0,
-                fontFamily: “'Bricolage Grotesque',sans-serif”, fontWeight: 700, fontSize: 14 }}>
+                fontFamily: "'Bricolage Grotesque',sans-serif", fontWeight: 700, fontSize: 14 }}>
               {searching ? '…' : 'Pesquisar'}
             </button>
           </div>
@@ -640,11 +640,11 @@ function AddRecModal({ onClose, onAdded }) {
                   border: '2px solid ' + (selected?.title === r.title ? '#191512' : '#e8e4d8'),
                   background: selected?.title === r.title ? '#f9f7f2' : '#fff',
                   transition: 'border-color 0.15s' }}>
-                {r.cover && <img src={r.cover} alt=”” style={{ width: 40, height: 58, objectFit: 'cover', borderRadius: 4, flexShrink: 0 }} />}
+                {r.cover && <img src={r.cover} alt="" style={{ width: 40, height: 58, objectFit: 'cover', borderRadius: 4, flexShrink: 0 }} />}
                 <div>
-                  <div style={{ fontFamily: “'Bricolage Grotesque',sans-serif”, fontWeight: 700, fontSize: 15 }}>{r.title}</div>
-                  <div style={{ fontFamily: “'Bricolage Grotesque',sans-serif”, fontSize: 13, color: '#8a8270' }}>{r.author}</div>
-                  {r.genre && <div style={{ fontFamily: “'Space Mono',monospace”, fontSize: 10, color: '#aaa', marginTop: 3 }}>{r.genre}</div>}
+                  <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontWeight: 700, fontSize: 15 }}>{r.title}</div>
+                  <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 13, color: '#8a8270' }}>{r.author}</div>
+                  {r.genre && <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 10, color: '#aaa', marginTop: 3 }}>{r.genre}</div>}
                 </div>
               </div>
             ))}
@@ -655,21 +655,21 @@ function AddRecModal({ onClose, onAdded }) {
         {selected && (
           <React.Fragment>
             <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontFamily: “'Bricolage Grotesque',sans-serif”,
+              <label style={{ display: 'block', fontFamily: "'Bricolage Grotesque',sans-serif",
                 fontSize: 13, fontWeight: 600, color: '#5a5248', marginBottom: 6 }}>
                 O que te fez amar este livro?
               </label>
               <textarea value={quote} onChange={e => setQuote(e.target.value)}
-                placeholder=”uma frase curta, do coração ✦”
+                placeholder="uma frase curta, do coração ✦"
                 rows={3}
                 style={{ width: '100%', border: '2px solid #191512', borderRadius: 10, padding: 10,
-                  fontFamily: “'Caveat',cursive”, fontSize: 18, resize: 'vertical', background: '#f9f7f2',
+                  fontFamily: "'Caveat',cursive", fontSize: 18, resize: 'vertical', background: '#f9f7f2',
                   outline: 'none', boxSizing: 'border-box' }} />
             </div>
             <button onClick={handleSave} disabled={saving || !quote.trim()}
               style={{ all: 'unset', cursor: saving || !quote.trim() ? 'not-allowed' : 'pointer',
                 padding: '12px 28px', borderRadius: 10, background: '#191512', color: '#f6f2e7',
-                fontFamily: “'Bricolage Grotesque',sans-serif”, fontWeight: 700, fontSize: 14,
+                fontFamily: "'Bricolage Grotesque',sans-serif", fontWeight: 700, fontSize: 14,
                 opacity: saving || !quote.trim() ? 0.5 : 1, transition: 'opacity 0.15s' }}>
               {saving ? 'A guardar…' : 'Guardar recomendação ✦'}
             </button>
@@ -682,16 +682,16 @@ function AddRecModal({ onClose, onAdded }) {
 
 function RecsFull() {
   const [recs, setRecs]       = useState([...(window.ALL_RECS || [])]);
-  const [mode, setMode]       = useState(“pessoa”);
-  const [val, setVal]         = useState(“Todas”);
+  const [mode, setMode]       = useState("pessoa");
+  const [val, setVal]         = useState("Todas");
   const [showAdd, setShowAdd] = useState(false);
 
-  const switchMode = (m) => { setMode(m); setVal(m === “pessoa” ? “Todas” : “Todos”); };
+  const switchMode = (m) => { setMode(m); setVal(m === "pessoa" ? "Todas" : "Todos"); };
   const recMembers = [...new Set(recs.map(r => r.by))].sort();
   const genres     = [...new Set(recs.map(r => r.genre).filter(Boolean))].sort();
-  const allLabel   = mode === “pessoa” ? “Todas” : “Todos”;
-  const chips      = mode === “pessoa” ? [allLabel, ...recMembers] : [allLabel, ...genres];
-  const list       = val === allLabel ? recs : recs.filter(r => (mode === “pessoa” ? r.by : r.genre) === val);
+  const allLabel   = mode === "pessoa" ? "Todas" : "Todos";
+  const chips      = mode === "pessoa" ? [allLabel, ...recMembers] : [allLabel, ...genres];
+  const list       = val === allLabel ? recs : recs.filter(r => (mode === "pessoa" ? r.by : r.genre) === val);
 
   async function handleDelete(id) {
     await removeRecommendation(id);
@@ -700,19 +700,19 @@ function RecsFull() {
 
   function handleAdded(rec) {
     setRecs(prev => [rec, ...prev]);
-    setVal(“Todas”); setMode(“pessoa”);
+    setVal("Todas"); setMode("pessoa");
   }
 
   return (
     <main>
-      <PageIntro eyebrow=”Fora do livro do mês” title=”Recomendações”
-        sub=”Os favoritos de sempre de cada uma — para quando acabamos o livro do mês cedo demais.”
+      <PageIntro eyebrow="Fora do livro do mês" title="Recomendações"
+        sub="Os favoritos de sempre de cada uma — para quando acabamos o livro do mês cedo demais."
         right={
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-            <Pill bg=”#c2e84f” fg=”#191512” font=”mono” size={11}>{recs.length} favoritos</Pill>
+            <Pill bg="#c2e84f" fg="#191512" font="mono" size={11}>{recs.length} favoritos</Pill>
             <button onClick={() => setShowAdd(true)}
               style={{ all: 'unset', cursor: 'pointer', padding: '10px 18px', borderRadius: 99,
-                background: '#191512', color: '#f6f2e7', fontFamily: “'Bricolage Grotesque',sans-serif”,
+                background: '#191512', color: '#f6f2e7', fontFamily: "'Bricolage Grotesque',sans-serif",
                 fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6,
                 boxShadow: '0 2px 8px rgba(25,21,18,0.18)', transition: 'opacity 0.15s' }}
               onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
@@ -722,26 +722,26 @@ function RecsFull() {
           </div>
         }
       />
-      <section className=”section” style={{ paddingTop: 18 }}>
-        <div className=”rec-filterbar”>
-          <span className=”micro”>filtrar por</span>
-          <div className=”seg”>
-            <button className={“seg-btn” + (mode === “pessoa” ? “ on” : “”)} onClick={() => switchMode(“pessoa”)}>pessoa</button>
-            <button className={“seg-btn” + (mode === “genero” ? “ on” : “”)} onClick={() => switchMode(“genero”)}>género</button>
+      <section className="section" style={{ paddingTop: 18 }}>
+        <div className="rec-filterbar">
+          <span className="micro">filtrar por</span>
+          <div className="seg">
+            <button className={"seg-btn" + (mode === "pessoa" ? " on" : "")} onClick={() => switchMode("pessoa")}>pessoa</button>
+            <button className={"seg-btn" + (mode === "genero" ? " on" : "")} onClick={() => switchMode("genero")}>género</button>
           </div>
         </div>
-        <div className=”bingo-tabs” style={{ marginBottom: 30 }}>
+        <div className="bingo-tabs" style={{ marginBottom: 30 }}>
           {chips.map(n => (
-            <button key={n} className={“bingo-tab” + (n === val ? “ is-on” : “”)} onClick={() => setVal(n)}>{n}</button>
+            <button key={n} className={"bingo-tab" + (n === val ? " is-on" : "")} onClick={() => setVal(n)}>{n}</button>
           ))}
         </div>
-        <div className=”recs-grid”>
+        <div className="recs-grid">
           {list.map((r, i) => (
             <RecCard key={r.id || (r.by + r.t)} rec={r} idx={i} onDelete={handleDelete} />
           ))}
           {list.length === 0 && (
             <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '60px 20px' }}>
-              <p className=”hand” style={{ fontSize: 22, color: 'var(--orange)' }}>
+              <p className="hand" style={{ fontSize: 22, color: 'var(--orange)' }}>
                 ainda não há recomendações aqui ✦
               </p>
             </div>

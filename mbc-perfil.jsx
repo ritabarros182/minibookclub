@@ -373,41 +373,41 @@ function PerfilPage() {
       </section>
 
       {/* recomendações */}
-      <section className=”section” style={{ paddingTop: 8 }}>
-        <div className=”section-head”>
+      <section className="section" style={{ paddingTop: 8 }}>
+        <div className="section-head">
           <div>
-            <span className=”eyebrow”>Fora do clube</span>
-            <h2 className=”section-title”>Recomendações</h2>
+            <span className="eyebrow">Fora do clube</span>
+            <h2 className="section-title">Recomendações</h2>
           </div>
         </div>
         {recs.length > 0 ? (
-          <div className=”recs-grid”>
+          <div className="recs-grid">
             {recs.map((r, i) => (
-              <div key={r.t} className=”rec-card” style={{ transform: 'rotate(' + ((i%2?1:-1)*1) + 'deg)' }}>
+              <div key={r.t} className="rec-card" style={{ transform: 'rotate(' + ((i%2?1:-1)*1) + 'deg)' }}>
                 <Poster book={r} w={150} rot={0} />
-                <div className=”rec-by”><span className=”rec-by-name”>{r.by}</span> recomenda</div>
-                <p className=”rec-quote hand”>”{r.q}”</p>
+                <div className="rec-by"><span className="rec-by-name">{r.by}</span> recomenda</div>
+                <p className="rec-quote hand">"{r.q}"</p>
               </div>
             ))}
           </div>
-        ) : <p className=”hand” style={{ fontSize: 19, color: “var(--orange)” }}>ainda sem recomendações ✦</p>}
+        ) : <p className="hand" style={{ fontSize: 19, color: "var(--orange)" }}>ainda sem recomendações ✦</p>}
       </section>
 
       {/* foto de perfil + géneros + PIN — só visível no perfil próprio */}
       {isMe && (
-        <section className=”section” style={{ paddingTop: 8, paddingBottom: 48, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <section className="section" style={{ paddingTop: 8, paddingBottom: 48, display: 'flex', flexDirection: 'column', gap: 12 }}>
           <PhotoUploadSection currentPhoto={ME.photoUrl} />
           <GenreSelector girl={girl} />
-          <div style={{ display: “flex”, alignItems: “center”, justifyContent: “space-between”,
-            padding: “20px 24px”, background: “#fff”, borderRadius: 16,
-            border: “1px solid #e8e4d8”, maxWidth: 440, marginTop: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "20px 24px", background: "#fff", borderRadius: 16,
+            border: "1px solid #e8e4d8", maxWidth: 440, marginTop: 0 }}>
             <div>
-              <span className=”eyebrow”>Segurança</span>
-              <p style={{ fontFamily: “'Bricolage Grotesque',sans-serif”, fontWeight: 600,
-                fontSize: 15, color: “var(--ink)”, margin: “4px 0 2px” }}>PIN de acesso</p>
-              <p className=”micro”>Muda o teu PIN de 4 dígitos a qualquer altura.</p>
+              <span className="eyebrow">Segurança</span>
+              <p style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontWeight: 600,
+                fontSize: 15, color: "var(--ink)", margin: "4px 0 2px" }}>PIN de acesso</p>
+              <p className="micro">Muda o teu PIN de 4 dígitos a qualquer altura.</p>
             </div>
-            <button className=”btn btn-ghost” style={{ padding: “10px 18px”, fontSize: 14, flexShrink: 0 }}
+            <button className="btn btn-ghost" style={{ padding: "10px 18px", fontSize: 14, flexShrink: 0 }}
               onClick={() => setShowPinModal(true)}>
               Alterar PIN
             </button>
