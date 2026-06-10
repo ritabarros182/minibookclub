@@ -509,7 +509,8 @@ function BingoFull() {
 
   const myBools = marksToBools(marks);
   const myCount = countMarks(myBools);
-  const locked = season.status === "locked";
+  const editable = season.status === "current";
+  const locked   = season.status === "locked";
 
   // leaderboard of the other members for this season
   const others = MBC_GIRLS.map(g => {
@@ -525,7 +526,7 @@ function BingoFull() {
         <div className="bingo-tabs">
           {SEASONS.map((s, i) => (
             <button key={s.id} className={"bingo-tab" + (i === ai ? " is-on" : "")} onClick={() => setAi(i)}>
-              <span style={{ fontSize: 16 }}>{s.icon}</span>{s.name}<span className="micro">{s.range}</span>{s.status === "locked" && " 🔒"}</button>
+              <span style={{ fontSize: 16 }}>{s.icon}</span>{s.name}<span className="micro">{s.range}</span>{(s.status === "locked" || s.status === "done") && " 🔒"}</button>
           ))}
         </div>
 
@@ -544,12 +545,12 @@ function BingoFull() {
               const mk = marks[i];
               return (
                 <div key={i} className={"bingo-sq" + (mk ? " marked" : "") + (locked ? " locked" : "")}
-                  style={{ cursor: locked ? "default" : "pointer" }}
-                  onClick={() => { if (!locked && !mk) setEntry(i); }}>
+                  style={{ cursor: editable && !mk ? "pointer" : "default" }}
+                  onClick={() => { if (editable && !mk) setEntry(i); }}>
                   {mk
                     ? <React.Fragment>
-                        <BingoSqCover title={mk.title} author={mk.author} color={mk.color} challenge={sq} />
-                        <button className="sq-remove" title="remover" onClick={(e) => { e.stopPropagation(); removeBook(i); }}>✕</button>
+                        <BingoSqCover title={mk.title} author={mk.author} color={mk.color || BINGO_COLORS[i % BINGO_COLORS.length]} challenge={sq} />
+                        {editable && <button className="sq-remove" title="remover" onClick={(e) => { e.stopPropagation(); removeBook(i); }}>&#x2715;</button>}
                       </React.Fragment>
                     : <span className="bingo-sq-text">{sq}</span>}
                 </div>
@@ -558,6 +559,7 @@ function BingoFull() {
             </div>
           </div>
           <p className="bingo-hint hand">{locked ? "esta estação ainda não começou ✦"
+            : !editable ? "esta estação já terminou ✦"
             : myCount >= 9 ? "BINGO! 🎉 completaste o cartão ✦"
             : "carrega num quadrado e diz que livro leste — aparece a capa ✦"}</p>
         </div>

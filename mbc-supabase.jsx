@@ -10,7 +10,7 @@ async function loadMBCData() {
   try {
     // Fetch tudo em paralelo
     const [members, books, meetings, reviews, recs, seasons, entries] = await Promise.all([
-      sb('member_pins?select=name,color,style,photo_url,preferred_genres&order=name'),
+      sb('member_pins?select=name,color,style,photo_url,preferred_genres,display_name,birthday&order=name'),
       sb('books?select=*&order=created_at'),
       sb('meetings?select=*&order=year.desc,sort_order.asc'),
       sb('reviews?select=*'),
@@ -30,6 +30,8 @@ async function loadMBCData() {
             ? m.preferred_genres
             : (() => { try { return JSON.parse(m.preferred_genres); } catch(e) { return []; } })())
         : [],
+      displayName: m.display_name || null,
+      birthday:    m.birthday    || null,
       // stats calculados abaixo
       clubRead: 0,
       avg:      0,
@@ -111,7 +113,8 @@ async function loadMBCData() {
     }));
 
     // ── SEASONS (Bingo) ───────────────────────────────────
-    window.SEASONS = seasons.map(s => ({
+    var _seenIds = {};
+    window.SEASONS = seasons.map(function(s) { return {
       id:         s.id,
       name:       s.name,
       range:      s.date_range,
@@ -119,7 +122,11 @@ async function loadMBCData() {
       color:      s.color,
       status:     s.status,
       challenges: Array.isArray(s.challenges) ? s.challenges : JSON.parse(s.challenges),
-    }));
+    }; }).filter(function(s) {
+      if (_seenIds[s.id]) return false;
+      _seenIds[s.id] = true;
+      return true;
+    });
 
     // ── BINGO_ENTRIES por membro+estação ──────────────────
     window.MBC_BINGO_ENTRIES = {};  // keyed by `${seasonId}|${memberName}`

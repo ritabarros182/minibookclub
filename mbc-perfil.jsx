@@ -224,13 +224,210 @@ function GenreSelector({ girl }) {
   );
 }
 
+function EditProfilePanel() {
+  var girl = MBC_GIRLS.find(function(g) { return g.name === ME.name; }) || ME;
+
+  // Photo
+  var [photo, setPhoto]           = React.useState(ME.photoUrl);
+  var [photoLoading, setPhotoLoading] = React.useState(false);
+  var [photoSaved, setPhotoSaved] = React.useState(false);
+  var photoRef = React.useRef();
+
+  // Info
+  var [dispName, setDispName]   = React.useState(girl.displayName || '');
+  var [birthday, setBirthday]   = React.useState(girl.birthday || '');
+  var [infoSaving, setInfoSaving] = React.useState(false);
+  var [infoSaved, setInfoSaved] = React.useState(false);
+
+  // Genres
+  var [genres, setGenres]         = React.useState(girl.preferredGenres || []);
+  var [genreSaving, setGenreSaving] = React.useState(false);
+  var [genreSaved, setGenreSaved] = React.useState(false);
+
+  // PIN
+  var [showPin, setShowPin] = React.useState(false);
+
+  async function handlePhoto(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var dataUrl = await resizeImage(file);
+    setPhoto(dataUrl);
+    setPhotoLoading(true); setPhotoSaved(false);
+    var res = await updatePhoto(ME.name, dataUrl);
+    setPhotoLoading(false);
+    if (res.ok) setPhotoSaved(true);
+  }
+
+  async function saveInfo() {
+    setInfoSaving(true); setInfoSaved(false);
+    var res = await updateProfileInfo(ME.name, { displayName: dispName.trim(), birthday: birthday });
+    setInfoSaving(false);
+    if (res.ok) setInfoSaved(true);
+  }
+
+  function toggleGenre(g) {
+    setGenres(function(prev) {
+      return prev.includes(g) ? prev.filter(function(x) { return x !== g; }) : prev.concat([g]);
+    });
+    setGenreSaved(false);
+  }
+
+  async function saveGenres() {
+    setGenreSaving(true); setGenreSaved(false);
+    var res = await updatePreferredGenres(ME.name, genres);
+    setGenreSaving(false);
+    if (res.ok) setGenreSaved(true);
+  }
+
+  var labelStyle = { fontFamily: "'Bricolage Grotesque',sans-serif", fontWeight: 600,
+    fontSize: 13, color: '#5a5248', display: 'block', marginBottom: 5 };
+  var inputStyle = { border: '2px solid #e8e4d8', borderRadius: 10, padding: '10px 14px',
+    fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 15, background: '#faf8f3',
+    outline: 'none', width: '100%', boxSizing: 'border-box', color: 'var(--ink)',
+    transition: 'border-color .15s' };
+  var divStyle = { borderBottom: '1px solid #e8e4d8', margin: '24px 0' };
+  var saveBtnStyle = function(saved, saving) { return {
+    all: 'unset', cursor: saving ? 'wait' : 'pointer', padding: '10px 22px',
+    borderRadius: 10, background: saved ? '#1f6b3b' : '#191512', color: '#f6f2e7',
+    fontFamily: "'Bricolage Grotesque',sans-serif", fontWeight: 700, fontSize: 14,
+    opacity: saving ? 0.6 : 1, transition: 'background .2s',
+  }; };
+
+  return (
+    <React.Fragment>
+      <div style={{ background: '#fff', border: '2px solid var(--ink)', borderRadius: 20,
+        overflow: 'hidden', maxWidth: 540 }}>
+
+        {/* Header com foto */}
+        <div style={{ background: ME.color, padding: '20px 24px', display: 'flex',
+          alignItems: 'center', gap: 16 }}>
+          <button onClick={function() { photoRef.current.click(); }} title="Mudar foto"
+            style={{ all: 'unset', cursor: 'pointer', position: 'relative', flexShrink: 0 }}>
+            <div style={{ width: 60, height: 60, borderRadius: '50%', overflow: 'hidden',
+              border: '3px solid rgba(255,255,255,0.55)', background: 'rgba(255,255,255,0.15)' }}>
+              {photo
+                ? <img src={photo} alt="foto"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                : <div style={{ width: '100%', height: '100%', display: 'flex',
+                    alignItems: 'center', justifyContent: 'center',
+                    fontFamily: "'Bricolage Grotesque',sans-serif", fontWeight: 700,
+                    fontSize: 24, color: '#fff' }}>{ME.name[0]}</div>}
+            </div>
+            <span style={{ position: 'absolute', bottom: 0, right: 0, width: 20, height: 20,
+              background: '#191512', borderRadius: '50%', display: 'flex',
+              alignItems: 'center', justifyContent: 'center', border: '2px solid ' + ME.color }}>
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5">
+                <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+              </svg>
+            </span>
+          </button>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: "'DM Serif Display',serif", fontStyle: 'italic',
+              fontSize: 22, color: '#fff', lineHeight: 1 }}>{dispName || ME.name}</div>
+            <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 10,
+              color: 'rgba(255,255,255,0.75)', marginTop: 4, letterSpacing: '.04em' }}>
+              EDITAR PERFIL
+            </div>
+          </div>
+          <input ref={photoRef} type="file" accept="image/*" onChange={handlePhoto}
+            style={{ display: 'none' }} />
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: '24px' }}>
+
+          {/* Feedback foto */}
+          {(photoLoading || photoSaved) && (
+            <div style={{ marginBottom: 16, fontFamily: "'Space Mono',monospace", fontSize: 11,
+              color: photoSaved ? '#1f6b3b' : '#8a8270' }}>
+              {photoLoading ? 'A guardar foto...' : '✓ Foto atualizada!'}
+            </div>
+          )}
+
+          {/* Nome + Aniversario */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div>
+              <label style={labelStyle}>Nome</label>
+              <input value={dispName}
+                onChange={function(e) { setDispName(e.target.value); setInfoSaved(false); }}
+                placeholder={ME.name} style={inputStyle} />
+              <span className="micro" style={{ marginTop: 4, display: 'block' }}>
+                Nome de exibicao. O login nao muda.
+              </span>
+            </div>
+            <div>
+              <label style={labelStyle}>Aniversario</label>
+              <input type="date" value={birthday}
+                onChange={function(e) { setBirthday(e.target.value); setInfoSaved(false); }}
+                style={inputStyle} />
+            </div>
+            <div>
+              <button onClick={saveInfo} disabled={infoSaving} style={saveBtnStyle(infoSaved, infoSaving)}>
+                {infoSaving ? 'A guardar...' : infoSaved ? '✓ Guardado' : 'Guardar informacao'}
+              </button>
+            </div>
+          </div>
+
+          <div style={divStyle} />
+
+          {/* Generos */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            marginBottom: 12, gap: 10 }}>
+            <div>
+              <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontWeight: 700,
+                fontSize: 15, color: 'var(--ink)', marginBottom: 2 }}>Generos preferidos</div>
+              <span className="micro">Aparecem no teu perfil.</span>
+            </div>
+            <button onClick={saveGenres} disabled={genreSaving}
+              style={saveBtnStyle(genreSaved, genreSaving)}>
+              {genreSaving ? '...' : genreSaved ? '✓' : 'Guardar'}
+            </button>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+            {ALL_GENRES.map(function(g) {
+              var on = genres.includes(g);
+              return (
+                <button key={g} onClick={function() { toggleGenre(g); }}
+                  style={{ all: 'unset', cursor: 'pointer', padding: '6px 13px', borderRadius: 20,
+                    fontFamily: "'Bricolage Grotesque',sans-serif", fontWeight: 600, fontSize: 13,
+                    background: on ? ME.color : '#f0ede6', color: on ? '#fff' : '#5a5248',
+                    border: '1.5px solid ' + (on ? ME.color : 'transparent'),
+                    transition: 'all .15s' }}>
+                  {g}
+                </button>
+              );
+            })}
+          </div>
+
+          <div style={divStyle} />
+
+          {/* PIN */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            gap: 10 }}>
+            <div>
+              <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontWeight: 700,
+                fontSize: 15, color: 'var(--ink)', marginBottom: 2 }}>PIN de acesso</div>
+              <span className="micro">Muda o teu PIN de 4 digitos a qualquer altura.</span>
+            </div>
+            <button className="btn btn-ghost" style={{ padding: '10px 18px', fontSize: 14,
+              flexShrink: 0 }} onClick={function() { setShowPin(true); }}>
+              Alterar PIN
+            </button>
+          </div>
+
+        </div>
+      </div>
+      {showPin && <ChangePinModal onClose={function() { setShowPin(false); }} />}
+    </React.Fragment>
+  );
+}
+
 function PerfilPage() {
   const param = new URLSearchParams(location.search).get("u");
   const who = (param && MBC_GIRLS.find(g => g.name === param)) ? param : ME.name;
   const girl = MBC_GIRLS.find(g => g.name === who);
   const isMe = who === ME.name;
 
-  const [showPinModal, setShowPinModal] = React.useState(false);
   const [selBingoSeason, setSelBingoSeason] = React.useState(null);
   const s = statsFor(who);
   const reviews = reviewsBy(who);
@@ -259,8 +456,8 @@ function PerfilPage() {
           : <div className="profile-av" style={{ background: girl.color }}>{who[0]}</div>}
         <div>
           <a href="Girls.html" className="micro" style={{ textDecoration: "none", color: "var(--orange)" }}>← as girls</a>
-          <h1 className="profile-name" style={{ marginTop: 6 }}>{who}{isMe && <span style={{ fontFamily: "'Caveat',cursive", fontSize: "0.45em", color: "#8a8270", marginLeft: 12 }}>és tu ✦</span>}</h1>
-          <p className="micro" style={{ marginTop: 6 }}>Membro desde 2024 · {girl.style}</p>
+          <h1 className="profile-name" style={{ marginTop: 6 }}>{girl.displayName || who}{isMe && <span style={{ fontFamily: "'Caveat',cursive", fontSize: "0.45em", color: "#8a8270", marginLeft: 12 }}>es tu ✦</span>}</h1>
+          <p className="micro" style={{ marginTop: 6 }}>Membro desde 2024{girl.style ? ' · ' + girl.style : ''}{girl.birthday ? ' · 🎂 ' + new Date(girl.birthday + 'T12:00:00').toLocaleDateString('pt-PT', { day: 'numeric', month: 'long' }) : ''}</p>
           {girl.preferredGenres && girl.preferredGenres.length > 0 && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginTop: 8 }}>
               {girl.preferredGenres.map(g => (
@@ -395,29 +592,19 @@ function PerfilPage() {
         ) : <p className="hand" style={{ fontSize: 19, color: "var(--orange)" }}>ainda sem recomendações ✦</p>}
       </section>
 
-      {/* foto de perfil + géneros + PIN — só visível no perfil próprio */}
+      {/* editar perfil — só visivel no perfil proprio */}
       {isMe && (
-        <section className="section" style={{ paddingTop: 8, paddingBottom: 48, display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <PhotoUploadSection currentPhoto={ME.photoUrl} />
-          <GenreSelector girl={girl} />
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "20px 24px", background: "#fff", borderRadius: 16,
-            border: "1px solid #e8e4d8", maxWidth: 440, marginTop: 0 }}>
+        <section className="section" style={{ paddingTop: 8, paddingBottom: 48 }}>
+          <div className="section-head" style={{ marginBottom: 22 }}>
             <div>
-              <span className="eyebrow">Segurança</span>
-              <p style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontWeight: 600,
-                fontSize: 15, color: "var(--ink)", margin: "4px 0 2px" }}>PIN de acesso</p>
-              <p className="micro">Muda o teu PIN de 4 dígitos a qualquer altura.</p>
+              <span className="eyebrow">So tu ves isto</span>
+              <h2 className="section-title">Editar Perfil</h2>
             </div>
-            <button className="btn btn-ghost" style={{ padding: "10px 18px", fontSize: 14, flexShrink: 0 }}
-              onClick={() => setShowPinModal(true)}>
-              Alterar PIN
-            </button>
           </div>
+          <EditProfilePanel />
         </section>
       )}
 
-      {showPinModal && <ChangePinModal onClose={() => setShowPinModal(false)} />}
       {selBingoSeason && <MemberBingoModal member={who} season={selBingoSeason} onClose={function() { setSelBingoSeason(null); }} />}
     </main>
   );

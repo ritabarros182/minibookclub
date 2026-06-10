@@ -158,5 +158,44 @@ async function updatePreferredGenres(name, genres) {
   }
 }
 
+/**
+ * Guarda nome de exibicao e/ou aniversario no Supabase.
+ * info: { displayName: string, birthday: string (YYYY-MM-DD) }
+ */
+async function updateProfileInfo(name, info) {
+  var body = {};
+  if (info.displayName !== undefined) body.display_name = info.displayName;
+  if (info.birthday   !== undefined) body.birthday      = info.birthday || null;
+  try {
+    var res = await fetch(
+      SUPABASE_URL + '/rest/v1/member_pins?name=eq.' + encodeURIComponent(name),
+      {
+        method:  'PATCH',
+        headers: Object.assign({}, _sbHeaders(), { Prefer: 'return=minimal' }),
+        body:    JSON.stringify(body),
+      }
+    );
+    if (!res.ok) throw new Error(res.status);
+    if (typeof MBC_GIRLS !== 'undefined') {
+      var g = MBC_GIRLS.find(function(x) { return x.name === name; });
+      if (g) {
+        if (info.displayName !== undefined) g.displayName = info.displayName;
+        if (info.birthday    !== undefined) g.birthday    = info.birthday;
+      }
+    }
+    try {
+      var s = JSON.parse(localStorage.getItem(SESSION_KEY));
+      if (s) {
+        if (info.displayName !== undefined) s.displayName = info.displayName;
+        if (info.birthday    !== undefined) s.birthday    = info.birthday;
+        localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+      }
+    } catch(e2) {}
+    return { ok: true };
+  } catch(e) {
+    return { ok: false, error: 'Erro ao guardar.' };
+  }
+}
+
 Object.assign(window, { getMe, setMe, logout, verifyPin, changePIN, updatePhoto, loadPhoto,
-  updatePreferredGenres, SUPABASE_URL, SUPABASE_KEY });
+  updatePreferredGenres, updateProfileInfo, SUPABASE_URL, SUPABASE_KEY });
