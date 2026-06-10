@@ -84,6 +84,7 @@ async function loadMBCData() {
         type:      m.meeting_type,
         photoUrl:  m.photo_url,
         picker:    m.picker_name,
+        genre:     book ? book.genre : null,
       };
     };
     window.MBC_BOOKS      = meetings.filter(m => +m.year === 2026).map(mapMeeting);

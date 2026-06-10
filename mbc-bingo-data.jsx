@@ -6,7 +6,7 @@
 const SEASONS = [
   { id:"inverno",   name:"Inverno",   range:"Jan–Mar", icon:"❄️", color:"#2d6fe0", status:"done",
     challenges:["Aquece a alma","Capa azul","Lido na manta","+400 páginas","Um clássico","Autora nórdica","Passa-se no inverno","Recomendado por uma amiga","Um policial"] },
-  { id:"primavera", name:"Primavera", range:"Abr–Jun", icon:"🌸", color:"#ff7eb6", status:"current",
+  { id:"primavera", name:"Primavera", range:"Abr–Jun", icon:"🌸", color:"#ff7eb6", status:"locked",
     challenges:["Autora portuguesa","Capa florida","−200 páginas","Publicado este ano","Estreia de autora","Um romance","Lido ao ar livre","Fez-te sorrir","Rosa na capa"] },
   { id:"verao",     name:"Verão",     range:"Jul–Set", icon:"☀️", color:"#f4b32c", status:"locked",
     challenges:["Lido na praia","Uma aventura","−300 páginas","Romance de verão","Autora estrangeira","Capa amarela","Lido num só dia","Numa ilha","Comprado em viagem"] },

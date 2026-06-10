@@ -319,8 +319,9 @@ function BookForm({ meetings, books, onDone }) {
 }
 
 // ── Editar dados de um livro existente ───────────────────────────────────────
-function EditBookForm({ books, meetings, onDone }) {
-  const [bookId, setBookId]       = useState('');
+function EditBookForm({ books, meetings, onDone, initialMeetingId }) {
+  const initBook = initialMeetingId ? (meetings.find(x => x.id === initialMeetingId)?.book_id || '') : '';
+  const [bookId, setBookId]       = useState(initBook);
   const [form, setForm]           = useState({ title: '', author: '', synopsis: '', cover_url: '', genre: '', spine_color: '#191512' });
   const [pickerName, setPickerName] = useState('');
   const [saving, setSaving]       = useState(false);
@@ -380,20 +381,22 @@ function EditBookForm({ books, meetings, onDone }) {
 
   return (
     <div>
-      <div className="form-row">
-        <label>Livro</label>
-        <select value={bookId} onChange={e => setBookId(e.target.value)}>
-          <option value="">Selecionar livro…</option>
-          {[...books].sort((a, b) => {
-            const ya = meetings.find(m => m.book_id === a.id)?.year || 0;
-            const yb = meetings.find(m => m.book_id === b.id)?.year || 0;
-            return yb - ya || a.title.localeCompare(b.title);
-          }).map(b => {
-            const yr = bookWithYear(b);
-            return <option key={b.id} value={b.id}>{yr} · {b.title}</option>;
-          })}
-        </select>
-      </div>
+      {!initialMeetingId && (
+        <div className="form-row">
+          <label>Livro</label>
+          <select value={bookId} onChange={e => setBookId(e.target.value)}>
+            <option value="">Selecionar livro…</option>
+            {[...books].sort((a, b) => {
+              const ya = meetings.find(m => m.book_id === a.id)?.year || 0;
+              const yb = meetings.find(m => m.book_id === b.id)?.year || 0;
+              return yb - ya || a.title.localeCompare(b.title);
+            }).map(b => {
+              const yr = bookWithYear(b);
+              return <option key={b.id} value={b.id}>{yr} · {b.title}</option>;
+            })}
+          </select>
+        </div>
+      )}
 
       {bookId && (
         <div>
@@ -425,7 +428,7 @@ function EditBookForm({ books, meetings, onDone }) {
             </div>
             <div className="form-row">
               <label>Género</label>
-              <input value={form.genre} onChange={e => set('genre', e.target.value)} placeholder="ex: Fiction, Romance…" />
+              <input value={form.genre} onChange={e => set('genre', e.target.value)} placeholder="ex: Fiction, Romance..." />
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
@@ -573,10 +576,12 @@ function MeetingForm({ meetings, onDone }) {
 }
 
 // ── Lista de todos os meses ──────────────────────────────────────────────────
-function MeetingsList({ meetings, books }) {
+function MeetingsList({ meetings, books, onDone }) {
   const [filterYear, setFilterYear] = useState('all');
+  const [editingId,  setEditingId]  = useState(null);
   const years = [...new Set(meetings.map(m => m.year))].sort((a, b) => b - a);
-  const filtered = filterYear === 'all' ? meetings : meetings.filter(m => m.year == filterYear);
+  const sorted = [...meetings].sort((a, b) => b.year - a.year || b.sort_order - a.sort_order);
+  const filtered = filterYear === 'all' ? sorted : sorted.filter(m => m.year == filterYear);
 
   return (
     <div>
@@ -588,17 +593,32 @@ function MeetingsList({ meetings, books }) {
       </div>
       {filtered.map(m => {
         const book = books.find(b => b.id === m.book_id);
+        const isEditing = editingId === m.id;
         return (
-          <div key={m.id} className="meeting-row">
-            <span className="meeting-month" style={{ width: 56 }}>{m.month_code} {m.year}</span>
-            <div style={{ flex: 1 }}>
-              <div className="meeting-book">{book ? book.title : <span style={{ color: '#aaa' }}>sem livro</span>}</div>
-              {book && <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 12, color: '#8a8270' }}>{book.author}</div>}
+          <div key={m.id} style={{ marginBottom: 8 }}>
+            <div className="meeting-row">
+              <span className="meeting-month" style={{ width: 56 }}>{m.month_code} {m.year}</span>
+              <div style={{ flex: 1 }}>
+                <div className="meeting-book">{book ? book.title : <span style={{ color: '#aaa' }}>sem livro</span>}</div>
+                {book && <div style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontSize: 12, color: '#8a8270' }}>{book.author}</div>}
+              </div>
+              {m.meeting_date && <span className="tag">{m.meeting_date}</span>}
+              {m.meeting_type && <span className="tag">{m.meeting_type}</span>}
+              {m.picker_name  && <span className="tag" style={{ background: '#e8f4e8', color: '#1f6b3b' }}>✦ {m.picker_name}</span>}
+              {m.is_current   && <span className="tag" style={{ background: '#c2e84f', color: '#191512' }}>atual</span>}
+              <button onClick={() => setEditingId(isEditing ? null : m.id)}
+                style={{ all: 'unset', cursor: 'pointer', padding: '5px 14px', borderRadius: 8,
+                  fontFamily: "'Bricolage Grotesque',sans-serif", fontWeight: 600, fontSize: 12,
+                  background: isEditing ? '#191512' : '#fff', color: isEditing ? '#f6f2e7' : '#5a5248',
+                  border: '1.5px solid ' + (isEditing ? '#191512' : '#d4cfc2'), transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
+                {isEditing ? '✕ Fechar' : '✏️ Editar'}
+              </button>
             </div>
-            {m.meeting_date && <span className="tag">{m.meeting_date}</span>}
-            {m.meeting_type && <span className="tag">{m.meeting_type}</span>}
-            {m.picker_name  && <span className="tag" style={{ background: '#e8f4e8', color: '#1f6b3b' }}>✦ {m.picker_name}</span>}
-            {m.is_current   && <span className="tag" style={{ background: '#c2e84f', color: '#191512' }}>atual</span>}
+            {isEditing && (
+              <div style={{ background: '#fff', border: '1.5px solid #e8e4d8', borderRadius: 12, padding: 20, marginTop: 4 }}>
+                <EditBookForm books={books} meetings={meetings} initialMeetingId={m.id} onDone={() => { setEditingId(null); onDone(); }} />
+              </div>
+            )}
           </div>
         );
       })}
@@ -676,7 +696,6 @@ function AdminApp() {
 
   const tabs = [
     ['livro',    '📚 Livro do mês'],
-    ['editBook', '✏️ Editar livro'],
     ['encontro', '📅 Encontro'],
     ['lista',    '📋 Todos os meses'],
     ['recs',     '💬 Recomendações'],
@@ -716,13 +735,6 @@ function AdminApp() {
           </div>
         )}
 
-        {tab === 'editBook' && (
-          <div className="admin-section">
-            <h2>Editar dados de um livro</h2>
-            <EditBookForm books={books} meetings={meetings} onDone={refresh} />
-          </div>
-        )}
-
         {tab === 'encontro' && (
           <div className="admin-section">
             <h2>Editar encontro</h2>
@@ -733,7 +745,7 @@ function AdminApp() {
         {tab === 'lista' && (
           <div className="admin-section">
             <h2>Todos os meses</h2>
-            <MeetingsList meetings={meetings} books={books} />
+            <MeetingsList meetings={meetings} books={books} onDone={refresh} />
           </div>
         )}
 

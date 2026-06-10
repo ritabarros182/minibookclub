@@ -69,9 +69,9 @@ function Spine({ book, h = 230, onClick, lean = 0 }) {
         transformOrigin: "bottom center", transition: "transform .18s cubic-bezier(.2,.8,.3,1), box-shadow .18s",
         display: "flex", alignItems: "center", justifyContent: "center" }}>
       <span style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", whiteSpace: "nowrap",
-        fontFamily: "'Bricolage Grotesque', sans-serif", fontWeight: 700, fontSize: w * 0.34,
-        letterSpacing: "0.04em", textTransform: "uppercase", maxHeight: "84%", overflow: "hidden",
-        textOverflow: "ellipsis" }}>{book.t}</span>
+        fontFamily: "'Bricolage Grotesque', sans-serif", fontWeight: 700,
+        fontSize: Math.max(7, Math.min(w * 0.34, Math.floor(h * 0.82 / book.t.length))),
+        letterSpacing: "0.04em", textTransform: "uppercase", maxHeight: "88%" }}>{book.t}</span>
       {book.current && <span style={{ position: "absolute", top: 7, left: "50%", transform: "translateX(-50%)",
         width: 7, height: 7, borderRadius: "50%", background: "#f6f2e7",
         boxShadow: "0 0 0 3px rgba(246,242,231,0.3)" }} />}

@@ -255,15 +255,14 @@ function EstanteFull() {
       />
 
       <section className="section" style={{ paddingTop: 18 }}>
-        {/* Prateleira com lombadas — todos os meses, upcoming a 30% */}
+        {/* Prateleira com lombadas — só revelados */}
         <div className="estante-frame">
           <div className="shelf">
-            {shelfBooks.map((b, i) => (
-              <div key={(b.year || '26') + b.m}
-                style={{ opacity: b.upcoming ? 0.3 : 1, transition: 'opacity 0.2s' }}>
+            {shelfBooks.filter(b => !b.upcoming).map((b, i) => (
+              <div key={(b.year || '26') + b.m}>
                 <Spine book={b} h={200 + ((i * 7) % 5) * 12}
                   lean={b.current ? -6 : 0}
-                  onClick={() => !b.upcoming && setSel(b)} />
+                  onClick={() => setSel(b)} />
               </div>
             ))}
           </div>
@@ -469,15 +468,6 @@ function BingoFull() {
               );
             })}
             </div>
-            <aside className="bingo-side">
-              <span className="micro">Conquistas</span>
-              <LineBadges bools={myBools} color={season.color} size="lg" />
-              <p className="bingo-side-note hand">uma LINHA, COLUNA ou DIAGONAL completa já conta — as 9 fazem BINGO! ✦</p>
-              <div className="bingo-side-prog">
-                <div className="evo-bar"><div className="evo-fill" style={{ width: (myCount / 9 * 100) + "%", background: season.color }} /></div>
-                <span className="micro">{myCount} de 9 quadrados</span>
-              </div>
-            </aside>
           </div>
           <p className="bingo-hint hand">{locked ? "esta estação ainda não começou ✦"
             : myCount >= 9 ? "BINGO! 🎉 completaste o cartão ✦"
@@ -504,7 +494,9 @@ function BingoFull() {
                   {count >= 9
                     ? <span className="evo-bingo">BINGO 🎉</span>
                     : <span className="evo-count">{count}<span className="micro"> / 9</span></span>}
-                  <LineBadges bools={bools} color={g.color} />
+                  {count < 9 && (bingoLines(bools).line || bingoLines(bools).col || bingoLines(bools).diag) && (
+                    <span className="evo-linha" style={{ background: g.color }}>✦ LINHA!</span>
+                  )}
                 </div>
               </div>
             </a>

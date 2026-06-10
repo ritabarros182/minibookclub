@@ -35,10 +35,10 @@ function Hero() {
   const synopsis = SYN[cur.t] || (gbInfo?.description ? gbInfo.description.slice(0, 200) + '…' : null);
 
   // Género da API
-  const genre = gbInfo?.categories?.[0] || null;
+  const genre = cur.genre || gbInfo?.categories?.[0] || null;
 
   // Quem escolheu
-  const picker = PICKERS[cur.m] || cur.picker || null;
+  const picker = cur.picker || PICKERS[cur.m] || null;
 
   // Capa: Supabase > Google Books runtime
   const coverUrl = cur.coverUrl || gbInfo?.cover || null;
