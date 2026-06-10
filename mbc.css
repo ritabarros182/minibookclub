@@ -191,6 +191,10 @@ a{color:inherit;}
 .sq-remove{position:absolute;top:-9px;right:-9px;width:24px;height:24px;border-radius:50%;border:2px solid var(--ink);
   background:#fff;color:var(--ink);font-size:11px;cursor:pointer;display:grid;place-items:center;z-index:3;opacity:0;transition:opacity .12s;}
 .bingo-sq.marked:hover .sq-remove{opacity:1;}
+.bingo-sq-overlay{position:absolute;inset:0;background:rgba(25,21,18,.82);opacity:0;transition:opacity .18s ease;
+  display:flex;flex-direction:column;justify-content:space-between;padding:10px 10px 9px;color:#f6f2e7;
+  z-index:2;pointer-events:none;border-radius:8px;}
+.bingo-sq.marked:hover .bingo-sq-overlay{opacity:1;}
 
 /* bingo evolution (others) */
 .evo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}

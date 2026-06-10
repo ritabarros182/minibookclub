@@ -231,6 +231,7 @@ function PerfilPage() {
   const isMe = who === ME.name;
 
   const [showPinModal, setShowPinModal] = React.useState(false);
+  const [selBingoSeason, setSelBingoSeason] = React.useState(null);
   const s = statsFor(who);
   const reviews = reviewsBy(who);
   const picks = picksBy(who);
@@ -299,7 +300,8 @@ function PerfilPage() {
             const bools = getMemberMarks(who, season);
             const count = countMarks(bools);
             return (
-              <div key={season.id} className="evo-card" style={{ cursor: "default" }}>
+              <div key={season.id} className="evo-card" style={{ cursor: season.status !== "locked" ? "pointer" : "default" }}
+                onClick={function() { if (season.status !== "locked") setSelBingoSeason(season); }}>
                 <div className="evo-top">
                   <span style={{ fontSize: 20 }}>{season.icon}</span>
                   <span className="evo-name">{season.name}</span>
@@ -416,6 +418,7 @@ function PerfilPage() {
       )}
 
       {showPinModal && <ChangePinModal onClose={() => setShowPinModal(false)} />}
+      {selBingoSeason && <MemberBingoModal member={who} season={selBingoSeason} onClose={function() { setSelBingoSeason(null); }} />}
     </main>
   );
 }

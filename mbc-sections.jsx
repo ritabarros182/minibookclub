@@ -331,6 +331,53 @@ function GirlsFull() {
 }
 
 /* ================================================================ BINGO */
+
+// Bingo square with real cover image + hover overlay (prompt + title + author)
+function BingoSqCover({ title, author, color, challenge }) {
+  const [cover, setCover] = useState(null);
+
+  useEffect(function() {
+    var alive = true;
+    fetchBookInfo(title, author).then(function(info) {
+      if (alive && info && info.cover) setCover(info.cover);
+    });
+    return function() { alive = false; };
+  }, [title, author]);
+
+  return (
+    <div style={{ position: "absolute", inset: 0, borderRadius: 8, overflow: "hidden" }}>
+      {cover
+        ? <img src={cover} alt={title}
+            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+        : <div style={{ position: "absolute", inset: 0, background: color, color: "#f6f2e7",
+            padding: "9px 11px 10px", display: "flex", flexDirection: "column",
+            justifyContent: "space-between", textAlign: "left", overflow: "hidden" }}>
+            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4,
+              background: "rgba(255,255,255,0.18)" }} />
+            <div style={{ fontFamily: "'DM Serif Display',serif", fontStyle: "italic",
+              fontSize: 14, lineHeight: 1.0, display: "-webkit-box", WebkitLineClamp: 3,
+              WebkitBoxOrient: "vertical", overflow: "hidden" }}>{title}</div>
+            <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 7.5, letterSpacing: ".04em",
+              textTransform: "uppercase", opacity: 0.85, whiteSpace: "nowrap", overflow: "hidden",
+              textOverflow: "ellipsis" }}>{author}</div>
+          </div>
+      }
+      <div className="bingo-sq-overlay">
+        <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 9, letterSpacing: ".08em",
+          textTransform: "uppercase", opacity: 0.75, lineHeight: 1.3 }}>{challenge}</div>
+        <div>
+          <div style={{ fontFamily: "'DM Serif Display',serif", fontStyle: "italic", fontSize: 13,
+            lineHeight: 1.1, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+            overflow: "hidden", marginBottom: 3 }}>{title}</div>
+          <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 8, letterSpacing: ".04em",
+            textTransform: "uppercase", opacity: 0.65, whiteSpace: "nowrap", overflow: "hidden",
+            textOverflow: "ellipsis" }}>{author}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function BingoEntry({ challenge, color, onClose, onSave }) {
   const [title, setTitle]     = useState("");
   const [author, setAuthor]   = useState("");
@@ -397,14 +444,55 @@ function BingoEntry({ challenge, color, onClose, onSave }) {
   );
 }
 
+// Read-only bingo card popup for another member
+function MemberBingoModal({ member, season, onClose }) {
+  const marks = getMemberMarksObj(member, season.id);
+  const count = countMarks(marksToBools(marks));
+  const g = MBC_GIRLS.find(function(x) { return x.name === member; }) || { color: "#191512" };
+  return (
+    <div className="modal-bg" onClick={onClose}>
+      <div className="modal" style={{ maxWidth: 520 }} onClick={function(e) { e.stopPropagation(); }}>
+        <button className="modal-close" onClick={onClose}>&#x2715;</button>
+        <div style={{ padding: "26px 26px 22px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+            <MemberAvatar name={member} size={42} border={"3px solid " + g.color} />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: "'DM Serif Display',serif", fontStyle: "italic",
+                fontSize: 24, lineHeight: 1 }}>{member}</div>
+              <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 11,
+                opacity: 0.6, marginTop: 3 }}>{season.icon} Bingo de {season.name}</div>
+            </div>
+            <Pill bg="#191512" fg="#c2e84f" font="mono" size={12}>{count} / 9</Pill>
+          </div>
+          <div className="bingo-grid bingo-grid-3" style={{ width: "100%", maxWidth: "100%" }}>
+            {season.challenges.map(function(sq, i) {
+              const mk = marks[i];
+              const col = BINGO_COLORS[i % BINGO_COLORS.length];
+              return (
+                <div key={i} className={"bingo-sq" + (mk ? " marked" : "")} style={{ cursor: "default" }}>
+                  {mk
+                    ? <BingoSqCover title={mk.title} author={mk.author} color={col} challenge={sq} />
+                    : <span className="bingo-sq-text">{sq}</span>
+                  }
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function BingoFull() {
   const startIdx = Math.max(0, SEASONS.findIndex(s => s.status === "current"));
   const [ai, setAi]     = useState(startIdx);
   const season           = SEASONS[ai];
   const [marks, setMarks] = useState(() => getMyMarks(season.id));
   const [entry, setEntry] = useState(null);
+  const [selMember, setSelMember] = useState(null);
 
-  useEffect(() => { setMarks(getMyMarks(season.id)); setEntry(null); }, [ai]);
+  useEffect(() => { setMarks(getMyMarks(season.id)); setEntry(null); setSelMember(null); }, [ai]);
 
   // Guardar no Supabase ao adicionar/remover
   const addBook = async (i, book) => {
@@ -460,7 +548,7 @@ function BingoFull() {
                   onClick={() => { if (!locked && !mk) setEntry(i); }}>
                   {mk
                     ? <React.Fragment>
-                        <MiniCover title={mk.title} author={mk.author} color={mk.color} />
+                        <BingoSqCover title={mk.title} author={mk.author} color={mk.color} challenge={sq} />
                         <button className="sq-remove" title="remover" onClick={(e) => { e.stopPropagation(); removeBook(i); }}>✕</button>
                       </React.Fragment>
                     : <span className="bingo-sq-text">{sq}</span>}
@@ -483,7 +571,8 @@ function BingoFull() {
         </div>
         <div className="evo-grid">
           {others.map(({ g, bools, count }) => (
-            <a key={g.name} href={"o-meu-perfil.html?u=" + encodeURIComponent(g.name)} className="evo-card">
+            <div key={g.name} className="evo-card" style={{ cursor: "pointer" }}
+              onClick={function() { setSelMember(g.name); }}>
               <div className="evo-top">
                 <div className="evo-av" style={{ background: g.color }}>{g.name[0]}</div>
                 <span className="evo-name">{g.name}{g.name === ME.name ? " (tu)" : ""}</span>
@@ -499,11 +588,12 @@ function BingoFull() {
                   )}
                 </div>
               </div>
-            </a>
+            </div>
           ))}
         </div>
       </section>
 
+      {selMember && <MemberBingoModal member={selMember} season={season} onClose={function() { setSelMember(null); }} />}
       {entry != null && <BingoEntry challenge={season.challenges[entry]} color={BINGO_COLORS[entry % BINGO_COLORS.length]}
         onClose={() => setEntry(null)} onSave={(book) => addBook(entry, book)} />}
     </main>
@@ -878,4 +968,4 @@ function EncontrosFull() {
   );
 }
 
-Object.assign(window, { PageIntro, EstanteFull, GirlsFull, BingoFull, RecsFull, EncontrosFull, starStr, ReviewText });
+Object.assign(window, { PageIntro, EstanteFull, GirlsFull, BingoFull, RecsFull, EncontrosFull, starStr, ReviewText, BingoSqCover, MemberBingoModal });

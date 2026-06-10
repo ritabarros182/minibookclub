@@ -4,14 +4,14 @@
 //          MiniGrid, MiniCover, BINGO_COLORS
 
 const SEASONS = [
-  { id:"inverno",   name:"Inverno",   range:"Jan–Mar", icon:"❄️", color:"#2d6fe0", status:"done",
-    challenges:["Aquece a alma","Capa azul","Lido na manta","+400 páginas","Um clássico","Autora nórdica","Passa-se no inverno","Recomendado por uma amiga","Um policial"] },
-  { id:"primavera", name:"Primavera", range:"Abr–Jun", icon:"🌸", color:"#ff7eb6", status:"locked",
-    challenges:["Autora portuguesa","Capa florida","−200 páginas","Publicado este ano","Estreia de autora","Um romance","Lido ao ar livre","Fez-te sorrir","Rosa na capa"] },
-  { id:"verao",     name:"Verão",     range:"Jul–Set", icon:"☀️", color:"#f4b32c", status:"locked",
-    challenges:["Lido na praia","Uma aventura","−300 páginas","Romance de verão","Autora estrangeira","Capa amarela","Lido num só dia","Numa ilha","Comprado em viagem"] },
-  { id:"outono",    name:"Outono",    range:"Out–Dez", icon:"🍂", color:"#ff5e2e", status:"locked",
-    challenges:["História de fantasmas","Tons quentes","Clássico que adiavas","+500 páginas","Ganhou um prémio","Adaptado ao cinema","Fez-te chorar","Mistério","Lido com chá"] },
+  { id:"inverno",   name:"Inverno",   range:"Jan-Mar", icon:"❄️", color:"#2d6fe0", status:"done",
+    challenges:["Been on Your Shelf the Longest","Under 250 Pages","Author You've Never Read Before","Book With a One Word Title","Reread a Favorite","First in a Series You Own","A Book With a Map Inside","Over 500 Pages","Book Recommended by a Friend"] },
+  { id:"primavera", name:"Primavera", range:"Abr-Jun", icon:"🌸", color:"#ff7eb6", status:"current",
+    challenges:["Sequel You've Been Putting Off","A Book With Mixed-media (Letters, Emails)","A Retelling","A Book You Meant to Read Last Year","A Book Featuring Found Family","A Book With Multiple POVs","A Prize Winning Book (Any Prize)","A Book You Got as a Gift","A Book Set in The Past 20 Years"] },
+  { id:"verao",     name:"Verao",     range:"Jul-Set", icon:"☀️", color:"#f4b32c", status:"locked",
+    challenges:["A Book Published This Year","A Book With a Number in the Title","An Author Whose Last Name Starts With the Same Letter as Yours","A Book With a City Name in the Title","A Book Set in a Fictional Country or World","A Book You Associate With a Specific Season","A Book You've Avoided Because It's 'Too Popular'","A Book Where the Main Character Has Your Name (or a Variant)","A Book You Bought Because of Social Media"] },
+  { id:"outono",    name:"Outono",    range:"Out-Dez", icon:"🍂", color:"#ff5e2e", status:"locked",
+    challenges:["A Book You've Been Intimidated to Start","A Book Featuring a Roadtrip or Journey","A Book Featuring a Sibling Relationship","A Book Set Before 1900","A Book You've Already Started but Never Finished","A Book From a Genre Blend (ex: Fantasy-Romance, Sci-Fi-Mystery)","A Book You Bought After Reading the First Page in a Store/Library","A Book Set in a City You've Lived in or Visited","A Book That Made It Onto Your TBR Because of Its Title Alone"] },
 ];
 
 // colours assigned to bingo book covers as you fill squares
