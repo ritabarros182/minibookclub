@@ -429,7 +429,28 @@ function PerfilPage() {
   const isMe = who === ME.name;
 
   const [selBingoSeason, setSelBingoSeason] = React.useState(null);
-  const s = statsFor(who);
+  const [statYear, setStatYear] = React.useState("2026");
+
+  function computeStatsYear(name, yr) {
+    var books = yr === "2025" ? MBC_BOOKS_2025 : MBC_BOOKS;
+    var nonUp = books.filter(function(b) { return !b.upcoming; });
+    var revd = nonUp.filter(function(b) {
+      var rs = MBC_REVIEWS[b.t];
+      return rs && rs.find(function(r) { return r.by === name; });
+    });
+    var ratings = revd.map(function(b) {
+      var r = MBC_REVIEWS[b.t].find(function(r) { return r.by === name; });
+      return r.r;
+    });
+    var avg = ratings.length
+      ? (ratings.reduce(function(a, v) { return a + v; }, 0) / ratings.length).toFixed(1)
+      : "0.0";
+    var pkCount = books.filter(function(b) { return PICKERS[b.m] === name; }).length;
+    return { avg: avg, read: revd.length, totalClub: nonUp.length,
+      reviews: revd.length, picks: pkCount, recs: recsBy(name).length, style: "" };
+  }
+
+  const s = statYear === "todos" ? statsFor(who) : computeStatsYear(who, statYear);
   const reviews = reviewsBy(who);
   const picks = picksBy(who);
   const recs = recsBy(who);
@@ -473,6 +494,21 @@ function PerfilPage() {
       </div>
 
       <section className="section" style={{ paddingTop: 24 }}>
+        <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
+          {["todos", "2026", "2025"].map(function(yr) {
+            var on = statYear === yr;
+            return (
+              <button key={yr} onClick={function() { setStatYear(yr); }}
+                style={{ all: "unset", cursor: "pointer", padding: "5px 13px", borderRadius: 20,
+                  fontFamily: "'Space Mono',monospace", fontSize: 11, fontWeight: 700,
+                  background: on ? girl.color : "#f0ede6", color: on ? "#fff" : "#5a5248",
+                  border: "1.5px solid " + (on ? girl.color : "transparent"),
+                  transition: "all .15s" }}>
+                {yr === "todos" ? "todos os anos" : yr}
+              </button>
+            );
+          })}
+        </div>
         <div className="stat-grid">
           {STATS.map(st => (
             <div key={st.label} className="stat-card">
@@ -493,19 +529,20 @@ function PerfilPage() {
           <a href="bookish-bingo.html" className="shelf-link">ir para o bingo →</a>
         </div>
         <div className="evo-grid">
-          {SEASONS.map(season => {
+          {SEASONS.filter(function(s) { return s.status !== "locked"; }).map(season => {
             const bools = getMemberMarks(who, season);
             const count = countMarks(bools);
             return (
-              <div key={season.id} className="evo-card" style={{ cursor: season.status !== "locked" ? "pointer" : "default" }}
-                onClick={function() { if (season.status !== "locked") setSelBingoSeason(season); }}>
+              <div key={season.id} className="evo-card"
+                style={{ cursor: "pointer", borderTop: "4px solid " + season.color }}
+                onClick={function() { setSelBingoSeason(season); }}>
                 <div className="evo-top">
                   <span style={{ fontSize: 20 }}>{season.icon}</span>
                   <span className="evo-name">{season.name}</span>
                   <span className="micro" style={{ marginLeft: "auto" }}>{season.range}</span>
                 </div>
                 <div className="evo-body">
-                  <MiniGrid bools={bools} color={girl.color} size={15} gap={4} />
+                  <MiniGrid bools={bools} color={season.color} size={15} gap={4} />
                   <div className="evo-prog">
                     {count >= 9 ? <span className="evo-bingo">BINGO 🎉</span>
                       : <span className="evo-count">{count}<span className="micro"> / 9</span></span>}
@@ -553,7 +590,7 @@ function PerfilPage() {
           <div className="mylist">
             {reviews.map(rv => (
               <div key={rv.title} className="mylist-item">
-                <div style={{ flex: "none" }}><Poster book={{ t: rv.title, a: rv.author, bg: rv.bg, fg: rv.fg }} w={46} rot={0} /></div>
+                <div style={{ flex: "none" }}><Poster book={{ t: rv.title, a: rv.author, bg: rv.bg, fg: rv.fg, coverUrl: rv.coverUrl }} w={46} rot={0} /></div>
                 <div className="mylist-body">
                   <div className="mylist-title">{rv.title}</div>
                   <div className="mylist-sub">{rv.author} · {rv.month}</div>

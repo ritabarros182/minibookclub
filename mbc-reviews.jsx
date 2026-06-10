@@ -70,7 +70,8 @@ function reviewsBy(name) {
     if (mine) {
       const book = MBC_BOOKS.find(b => b.t === title);
       out.push({ title, author: book ? book.a : "", month: book ? book.m : "", r: mine.r, t: mine.t, more: mine.more,
-        bg: book ? book.bg : "#191512", fg: book ? book.fg : "#fff" });
+        bg: book ? book.bg : "#191512", fg: book ? book.fg : "#fff",
+        coverUrl: book ? (book.coverUrl || book.cover_url || null) : null });
     }
   });
   return out;

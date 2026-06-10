@@ -378,9 +378,9 @@ function BingoSqCover({ title, author, color, challenge }) {
   );
 }
 
-function BingoEntry({ challenge, color, onClose, onSave }) {
-  const [title, setTitle]     = useState("");
-  const [author, setAuthor]   = useState("");
+function BingoEntry({ challenge, color, onClose, onSave, initial }) {
+  const [title, setTitle]     = useState(initial ? initial.title : "");
+  const [author, setAuthor]   = useState(initial ? (initial.author === "—" ? "" : initial.author) : "");
   const [preview, setPreview] = useState(null);   // null = idle, false = loading, objeto = resultado
   const debounceRef = React.useRef(null);
 
@@ -401,7 +401,7 @@ function BingoEntry({ challenge, color, onClose, onSave }) {
       <div className="modal" style={{ maxWidth: 440 }} onClick={e => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose}>✕</button>
         <div style={{ padding: "30px 28px 28px" }}>
-          <span className="micro" style={{ color: "var(--orange)" }}>Marcar quadrado</span>
+          <span className="micro" style={{ color: "var(--orange)" }}>{initial ? "Editar entrada" : "Marcar quadrado"}</span>
           <h3 style={{ margin: "6px 0 18px", fontFamily: "'DM Serif Display',serif", fontStyle: "italic", fontSize: 26, lineHeight: 1.05 }}>"{challenge}"</h3>
           <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
             <div style={{ width: 70, height: 100, flex: "none", position: "relative", borderRadius: 8, overflow: "hidden", boxShadow: "0 6px 16px -6px rgba(25,21,18,.4)" }}>
@@ -435,7 +435,7 @@ function BingoEntry({ challenge, color, onClose, onSave }) {
           <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
             <button className="btn btn-primary" style={{ padding: "11px 22px", fontSize: 14 }}
               onClick={() => { if (title.trim()) onSave({ title: title.trim(), author: author.trim() || "—", color }); }}>
-              Marcar ✓</button>
+              {initial ? "Guardar ✓" : "Marcar ✓"}</button>
             <button className="btn btn-ghost" style={{ padding: "11px 22px", fontSize: 14 }} onClick={onClose}>Cancelar</button>
           </div>
         </div>
@@ -485,9 +485,10 @@ function MemberBingoModal({ member, season, onClose }) {
 }
 
 function BingoFull() {
-  const startIdx = Math.max(0, SEASONS.findIndex(s => s.status === "current"));
+  const visSeasons = SEASONS.filter(s => s.status !== "locked");
+  const startIdx = Math.max(0, visSeasons.findIndex(s => s.status === "current"));
   const [ai, setAi]     = useState(startIdx);
-  const season           = SEASONS[ai];
+  const season           = visSeasons[ai];
   const [marks, setMarks] = useState(() => getMyMarks(season.id));
   const [entry, setEntry] = useState(null);
   const [selMember, setSelMember] = useState(null);
@@ -524,9 +525,11 @@ function BingoFull() {
         sub="Quatro cartões 3×3, um por estação. Marca um quadrado sempre que leres um livro que encaixe no desafio — e vê como vão as outras." />
       <section className="section" style={{ paddingTop: 18 }}>
         <div className="bingo-tabs">
-          {SEASONS.map((s, i) => (
-            <button key={s.id} className={"bingo-tab" + (i === ai ? " is-on" : "")} onClick={() => setAi(i)}>
-              <span style={{ fontSize: 16 }}>{s.icon}</span>{s.name}<span className="micro">{s.range}</span>{(s.status === "locked" || s.status === "done") && " 🔒"}</button>
+          {visSeasons.map((s, i) => (
+            <button key={s.id} className={"bingo-tab" + (i === ai ? " is-on" : "")}
+              style={i === ai ? { background: s.color, borderColor: s.color } : { borderColor: s.color + "88" }}
+              onClick={() => setAi(i)}>
+              <span style={{ fontSize: 16 }}>{s.icon}</span>{s.name}<span className="micro">{s.range}</span>{s.status === "done" && " 🔒"}</button>
           ))}
         </div>
 
@@ -545,8 +548,8 @@ function BingoFull() {
               const mk = marks[i];
               return (
                 <div key={i} className={"bingo-sq" + (mk ? " marked" : "") + (locked ? " locked" : "")}
-                  style={{ cursor: editable && !mk ? "pointer" : "default" }}
-                  onClick={() => { if (editable && !mk) setEntry(i); }}>
+                  style={{ cursor: editable ? "pointer" : "default" }}
+                  onClick={() => { if (editable) setEntry(i); }}>
                   {mk
                     ? <React.Fragment>
                         <BingoSqCover title={mk.title} author={mk.author} color={mk.color || BINGO_COLORS[i % BINGO_COLORS.length]} challenge={sq} />
@@ -561,7 +564,7 @@ function BingoFull() {
           <p className="bingo-hint hand">{locked ? "esta estação ainda não começou ✦"
             : !editable ? "esta estação já terminou ✦"
             : myCount >= 9 ? "BINGO! 🎉 completaste o cartão ✦"
-            : "carrega num quadrado e diz que livro leste — aparece a capa ✦"}</p>
+            : "carrega num quadrado para marcar ou editar — aparece a capa ✦"}</p>
         </div>
 
         {/* evolution of the others */}
@@ -580,7 +583,7 @@ function BingoFull() {
                 <span className="evo-name">{g.name}{g.name === ME.name ? " (tu)" : ""}</span>
               </div>
               <div className="evo-body">
-                <MiniGrid bools={bools} color={g.color} size={15} gap={4} />
+                <MiniGrid bools={bools} color={season.color} size={15} gap={4} />
                 <div className="evo-prog">
                   {count >= 9
                     ? <span className="evo-bingo">BINGO 🎉</span>
@@ -597,6 +600,7 @@ function BingoFull() {
 
       {selMember && <MemberBingoModal member={selMember} season={season} onClose={function() { setSelMember(null); }} />}
       {entry != null && <BingoEntry challenge={season.challenges[entry]} color={BINGO_COLORS[entry % BINGO_COLORS.length]}
+        initial={marks[entry] || null}
         onClose={() => setEntry(null)} onSave={(book) => addBook(entry, book)} />}
     </main>
   );
