@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>MBC Bingo Import</title>
+<style>
+body { font-family: monospace; padding: 20px; background: #f5f5f5; max-width: 900px; margin: 0 auto; }
+h1 { font-size: 18px; margin-bottom: 6px; }
+.note { background: #fff3cd; border: 1px solid #ffc107; padding: 12px 16px; border-radius: 6px; font-size: 13px; margin-bottom: 16px; line-height: 1.6; }
+.note b { color: #856404; }
+.snippet { background: #1e1e1e; color: #d4d4d4; padding: 14px; border-radius: 6px; font-size: 11px; overflow-x: auto; white-space: pre; margin-bottom: 12px; }
+.btns { display: flex; gap: 8px; margin-bottom: 12px; }
+button { padding: 10px 20px; background: #2d6fe0; color: white; border: none; cursor: pointer; font-size: 13px; border-radius: 6px; }
+button:hover { background: #1d5fc0; }
+button.copy { background: #555; }
+button.copy:hover { background: #333; }
+#log { background: white; border: 1px solid #ccc; padding: 12px; margin-top: 8px; height: 500px; overflow-y: auto; font-size: 12px; line-height: 1.6; }
+.ok { color: #1a7a1a; }
+.err { color: #c0281d; font-weight: bold; }
+.info { color: #666; }
+.hd { color: #2d6fe0; font-weight: bold; margin-top: 6px; border-top: 1px solid #eee; padding-top: 4px; }
+</style>
+</head>
+<body>
+<h1>MBC Bingo Import Tool</h1>
+
+<div class="note" id="notice">
+  <b>⚠️ Como usar:</b><br>
+  Este ficheiro não pode fazer pedidos de rede quando aberto como ficheiro local.<br>
+  Tens duas opções:<br><br>
+  <b>Opção A (mais fácil):</b><br>
+  1. Abre a app MBC no Chrome: <a href="https://barrosrita2.github.io/minibookclub/" target="_blank">barrosrita2.github.io/minibookclub</a><br>
+  2. Abre a consola do browser (F12 → Console)<br>
+  3. Clica "Copiar Script" abaixo e cola na consola<br>
+  4. Prime Enter e aguarda<br><br>
+  <b>Opção B:</b><br>
+  Se a app estiver em outro URL, abre esse URL primeiro e depois usa a opção A.
+</div>
+
+<div class="btns">
+  <button class="copy" onclick="copyScript()">📋 Copiar Script para Consola</button>
+</div>
+<div id="copied" style="display:none;color:green;font-size:13px;margin-bottom:8px;">✓ Script copiado! Cola na consola do browser (F12 → Console).</div>
+
+<hr style="margin:16px 0">
+<p style="font-size:12px;color:#666">Ou, se já tiveres a app aberta neste browser, clica abaixo para correr diretamente:</p>
+<div class="btns">
+  <button onclick="runImport()">▶ Run Import (requer app aberta)</button>
+  <button onclick="clearLog()">Clear Log</button>
+</div>
+<div id="log"></div>
+
+<script>
+var SUPABASE_URL = 'https://ymtxdnuxhwujxfhbmahs.supabase.co';
+var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InltdHhkbnV4aHd1anhmaGJtYWhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4MjgwNTMsImV4cCI6MjA5NjQwNDA1M30.MLBuqrYc5coeVBdtLBn2AnMxuMJ9YCvbqsEnVWeZyZE';
+
+function log(msg, cls) {
+  var d = document.getElementById('log');
+  var el = document.createElement('div');
+  if (cls) { el.className = cls; }
+  el.textContent = msg;
+  d.appendChild(el);
+  d.scrollTop = d.scrollHeight;
+}
+function clearLog() { document.getElementById('log').innerHTML = ''; }
+
+function makeHeaders(extra) {
+  var h = {
+    'apikey': SUPABASE_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_KEY,
+    'Content-Type': 'application/json'
+  };
+  if (extra) {
+    var keys = Object.keys(extra);
+    for (var i = 0; i < keys.length; i++) { h[keys[i]] = extra[keys[i]]; }
+  }
+  return h;
+}
+
+var SEASONS = [
+  {id:'inverno',name:'Inverno',date_range:'Jan-Mar',icon:'❄️',color:'#2d6fe0',status:'done',year:2026,challenges:['Been on Your Shelf the Longest','Under 250 Pages','Author You\'ve Never Read Before','Book With a One Word Title','Reread a Favorite','First in a Series You Own','A Book With a Map Inside','Over 500 Pages','Book Recommended by a Friend']},
+  {id:'primavera',name:'Primavera',date_range:'Abr-Jun',icon:'🌸',color:'#ff7eb6',status:'current',year:2026,challenges:['Sequel You\'ve Been Putting Off','A Book With Mixed-media (Letters, Emails)','A Retelling','A Book You Meant to Read Last Year','A Book Featuring Found Family','A Book With Multiple POVs','A Prize Winning Book (Any Prize)','A Book You Got as a Gift','A Book Set in The Past 20 Years']},
+  {id:'verao',name:'Verao',date_range:'Jul-Set',icon:'☀️',color:'#f4b32c',status:'locked',year:2026,challenges:['A Book Published This Year','A Book With a Number in the Title','An Author Whose Last Name Starts With the Same Letter as Yours','A Book With a City Name in the Title','A Book Set in a Fictional Country or World','A Book You Associate With a Specific Season','A Book You\'ve Avoided Because It\'s \'Too Popular\'','A Book Where the Main Character Has Your Name (or a Variant)','A Book You Bought Because of Social Media']},
+  {id:'outono',name:'Outono',date_range:'Out-Dez',icon:'🍂',color:'#ff5e2e',status:'locked',year:2026,challenges:['A Book You\'ve Been Intimidated to Start','A Book Featuring a Roadtrip or Journey','A Book Featuring a Sibling Relationship','A Book Set Before 1900','A Book You\'ve Already Started but Never Finished','A Book From a Genre Blend (ex: Fantasy-Romance, Sci-Fi-Mystery)','A Book You Bought After Reading the First Page in a Store/Library','A Book Set in a City You\'ve Lived in or Visited','A Book That Made It Onto Your TBR Because of Its Title Alone']}
+];
+
+var ENTRIES = [
+  {season_id:'inverno',member_name:'Rita',square_index:0,book_title:"I'm Glad My Mom Died",book_author:''},
+  {season_id:'inverno',member_name:'Rita',square_index:1,book_title:'The Perks of Being a Wallflower',book_author:''},
+  {season_id:'inverno',member_name:'Rita',square_index:2,book_title:'People Like Us',book_author:''},
+  {season_id:'inverno',member_name:'Rita',square_index:3,book_title:'Discontent',book_author:'Beatriz Serrano'},
+  {season_id:'inverno',member_name:'Rita',square_index:4,book_title:'Love, Theoretically',book_author:'Ali Hazelwood'},
+  {season_id:'inverno',member_name:'Rita',square_index:5,book_title:'The Housemaid',book_author:'Freida McFadden'},
+  {season_id:'inverno',member_name:'Rita',square_index:6,book_title:'Murder on the Orient Express',book_author:'Agatha Christie'},
+  {season_id:'inverno',member_name:'Rita',square_index:7,book_title:'Things We Never Got Over',book_author:''},
+  {season_id:'inverno',member_name:'Rita',square_index:8,book_title:'Atmosphere',book_author:'Taylor Jenkins Reid'},
+  {season_id:'inverno',member_name:'Cláudia',square_index:3,book_title:'Três',book_author:'Valerie Perrin'},
+  {season_id:'inverno',member_name:'Catarina V.',square_index:3,book_title:'Obsidio',book_author:''},
+  {season_id:'inverno',member_name:'Catarina V.',square_index:4,book_title:'Love, Theoretically',book_author:''},
+  {season_id:'inverno',member_name:'Catarina V.',square_index:8,book_title:'The House of My Mother',book_author:''},
+  {season_id:'inverno',member_name:'Maria',square_index:2,book_title:'The Cinnamon Bun Book Store',book_author:''},
+  {season_id:'inverno',member_name:'Maria',square_index:8,book_title:'A Teoria do Amor',book_author:''},
+  {season_id:'inverno',member_name:'Marta',square_index:3,book_title:'Breathe',book_author:''},
+  {season_id:'inverno',member_name:'Marta',square_index:8,book_title:'The Pumpkin Spice Café',book_author:''},
+  {season_id:'inverno',member_name:'Filipa',square_index:3,book_title:'Bride',book_author:''},
+  {season_id:'inverno',member_name:'Filipa',square_index:4,book_title:'Divine Rivals',book_author:''},
+  {season_id:'inverno',member_name:'Filipa',square_index:8,book_title:'Love, Theoretically',book_author:''},
+  {season_id:'inverno',member_name:'Juliana',square_index:0,book_title:'Feitiços de Amor',book_author:'Barbara Bretton'},
+  {season_id:'inverno',member_name:'Juliana',square_index:1,book_title:'Everything Inside',book_author:'Edwidge Danticat'},
+  {season_id:'inverno',member_name:'Juliana',square_index:2,book_title:'Brightly Shining',book_author:'Ingvild H. Rishøi'},
+  {season_id:'inverno',member_name:'Juliana',square_index:3,book_title:'Katabasis',book_author:'R. F. Kuang'},
+  {season_id:'inverno',member_name:'Juliana',square_index:4,book_title:'A Criada',book_author:'Freida McFadden'},
+  {season_id:'inverno',member_name:'Juliana',square_index:8,book_title:'A Teoria do Amor',book_author:''},
+  {season_id:'inverno',member_name:'Elizabete',square_index:8,book_title:'Love Theoretically',book_author:''},
+  {season_id:'inverno',member_name:'Daniela',square_index:8,book_title:'A Teoria do Amor',book_author:'Ali Hazelwood'},
+  {season_id:'inverno',member_name:'Carolina',square_index:8,book_title:'Yellowface',book_author:''},
+  {season_id:'inverno',member_name:'Catarina S.',square_index:8,book_title:'Riding the High',book_author:''},
+  {season_id:'primavera',member_name:'Rita',square_index:0,book_title:'Caught Up',book_author:'Liz Tomforde'},
+  {season_id:'primavera',member_name:'Rita',square_index:1,book_title:'Orgulho e Preconceito',book_author:''},
+  {season_id:'primavera',member_name:'Rita',square_index:2,book_title:'The Cuffing Game',book_author:''},
+  {season_id:'primavera',member_name:'Rita',square_index:3,book_title:'Everything I Know About Love',book_author:''},
+  {season_id:'primavera',member_name:'Rita',square_index:4,book_title:'The Correspondent',book_author:'Virginia Evans'},
+  {season_id:'primavera',member_name:'Rita',square_index:5,book_title:'His & Hers',book_author:''},
+  {season_id:'primavera',member_name:'Rita',square_index:6,book_title:'The Kiss Quotient',book_author:''},
+  {season_id:'primavera',member_name:'Rita',square_index:7,book_title:'Without Merit',book_author:''},
+  {season_id:'primavera',member_name:'Rita',square_index:8,book_title:'Dear Debbie',book_author:''},
+  {season_id:'primavera',member_name:'Cláudia',square_index:1,book_title:'Butcher & Blackbird',book_author:''},
+  {season_id:'primavera',member_name:'Cláudia',square_index:2,book_title:'Uma Tempestade de Chá',book_author:''},
+  {season_id:'primavera',member_name:'Cláudia',square_index:7,book_title:'Panenka',book_author:''},
+  {season_id:'primavera',member_name:'Filipa',square_index:0,book_title:'Scythe & Sparrow',book_author:''},
+  {season_id:'primavera',member_name:'Filipa',square_index:1,book_title:'Not Quite Dead Yet',book_author:''},
+  {season_id:'primavera',member_name:'Filipa',square_index:6,book_title:'Kingdom of Ash',book_author:''},
+  {season_id:'primavera',member_name:'Juliana',square_index:0,book_title:'Leather & Lark',book_author:''},
+  {season_id:'primavera',member_name:'Juliana',square_index:1,book_title:'Margo Tem Problemas de Dinheiro',book_author:''},
+  {season_id:'primavera',member_name:'Juliana',square_index:3,book_title:'Silver Elite',book_author:''},
+  {season_id:'primavera',member_name:'Juliana',square_index:5,book_title:'Mind*ck Series',book_author:''},
+  {season_id:'primavera',member_name:'Juliana',square_index:6,book_title:'Ainda Não Estou Morta',book_author:''},
+  {season_id:'primavera',member_name:'Juliana',square_index:7,book_title:'Kingdom of Ash',book_author:''},
+  {season_id:'primavera',member_name:'Juliana',square_index:8,book_title:'Panenka',book_author:''},
+  {season_id:'primavera',member_name:'Luísa',square_index:0,book_title:'Corte de Chamas Prateadas',book_author:''},
+  {season_id:'primavera',member_name:'Luísa',square_index:4,book_title:'Uma Tempestade de Chá',book_author:''},
+  {season_id:'primavera',member_name:'Catarina V.',square_index:1,book_title:'Querida Debbie',book_author:''},
+  {season_id:'primavera',member_name:'Catarina V.',square_index:5,book_title:'Game Changer',book_author:''},
+  {season_id:'primavera',member_name:'Catarina V.',square_index:6,book_title:'Panenka',book_author:''},
+  {season_id:'primavera',member_name:'Daniela',square_index:3,book_title:'A Camareira',book_author:''},
+  {season_id:'primavera',member_name:'Daniela',square_index:4,book_title:'O Mistério da Bala Perdida',book_author:''},
+  {season_id:'primavera',member_name:'Daniela',square_index:6,book_title:'Impostora',book_author:''},
+  {season_id:'primavera',member_name:'Elizabete',square_index:1,book_title:"It's Behind You",book_author:''},
+  {season_id:'primavera',member_name:'Elizabete',square_index:8,book_title:'The Bachman Books',book_author:''}
+];
+
+async function patchSeason(s) {
+  try {
+    // Try upsert first (creates row if not exists, updates if exists)
+    var res = await fetch(
+      SUPABASE_URL + '/rest/v1/bingo_seasons',
+      {
+        method: 'POST',
+        headers: makeHeaders({'Prefer': 'resolution=merge-duplicates,return=minimal'}),
+        body: JSON.stringify({id:s.id,name:s.name,date_range:s.date_range,icon:s.icon,color:s.color,status:s.status,challenges:s.challenges,year:s.year})
+      }
+    );
+    if (!res.ok) {
+      var t = await res.text();
+      // Fallback: try PATCH in case upsert not supported
+      var res2 = await fetch(
+        SUPABASE_URL + '/rest/v1/bingo_seasons?id=eq.' + s.id,
+        {
+          method: 'PATCH',
+          headers: makeHeaders({'Prefer': 'return=minimal'}),
+          body: JSON.stringify({name:s.name,date_range:s.date_range,icon:s.icon,color:s.color,status:s.status,challenges:s.challenges,year:s.year})
+        }
+      );
+      if (!res2.ok) { var t2 = await res2.text(); log('  FAIL season ' + s.id + ': ' + t + ' / ' + t2, 'err'); return false; }
+    }
+    log('  season ' + s.id + ' OK', 'ok');
+    return true;
+  } catch(e) { log('  EXC season ' + s.id + ': ' + e.message, 'err'); return false; }
+}
+
+async function deleteEntriesForSeason(sid) {
+  try {
+    var res = await fetch(
+      SUPABASE_URL + '/rest/v1/bingo_entries?season_id=eq.' + sid,
+      { method: 'DELETE', headers: makeHeaders({'Prefer': 'return=minimal'}) }
+    );
+    if (!res.ok) { var t = await res.text(); log('  FAIL delete ' + sid + ': ' + t, 'err'); return false; }
+    log('  deleted entries for ' + sid, 'info');
+    return true;
+  } catch(e) { log('  EXC delete ' + sid + ': ' + e.message, 'err'); return false; }
+}
+
+async function insertEntry(entry) {
+  try {
+    var res = await fetch(
+      SUPABASE_URL + '/rest/v1/bingo_entries',
+      { method: 'POST', headers: makeHeaders({'Prefer': 'return=minimal'}), body: JSON.stringify(entry) }
+    );
+    if (!res.ok) { var t = await res.text(); log('  FAIL [' + entry.member_name + '/' + entry.season_id + '[' + entry.square_index + ']]: ' + t, 'err'); return false; }
+    return true;
+  } catch(e) { log('  EXC [' + entry.member_name + ']: ' + e.message, 'err'); return false; }
+}
+
+async function runImport() {
+  clearLog();
+  log('=== MBC Bingo Import === (' + ENTRIES.length + ' entries)', 'hd');
+  log('--- Step 1: bingo_seasons ---', 'hd');
+  for (var i = 0; i < SEASONS.length; i++) { await patchSeason(SEASONS[i]); }
+  log('--- Step 2: clear entries ---', 'hd');
+  await deleteEntriesForSeason('inverno');
+  await deleteEntriesForSeason('primavera');
+  log('--- Step 3: insert entries ---', 'hd');
+  var ok = 0; var fail = 0; var last = '';
+  for (var j = 0; j < ENTRIES.length; j++) {
+    var e = ENTRIES[j];
+    if (e.season_id !== last) { log('  [' + e.season_id.toUpperCase() + ']', 'info'); last = e.season_id; }
+    if (await insertEntry(e)) { ok++; } else { fail++; }
+  }
+  log('--- ' + (fail === 0 ? 'DONE: ' + ok + ' entries OK!' : ok + ' OK / ' + fail + ' FAILED') + ' ---', fail === 0 ? 'ok' : 'err');
+}
+
+function buildConsoleScript() {
+  var lines = [];
+  lines.push('(async function() {');
+  lines.push('var U="https://ymtxdnuxhwujxfhbmahs.supabase.co";');
+  lines.push('var K="' + SUPABASE_KEY + '";');
+  lines.push('var H={"apikey":K,"Authorization":"Bearer "+K,"Content-Type":"application/json","Prefer":"return=minimal"};');
+  lines.push('var S=' + JSON.stringify(SEASONS) + ';');
+  lines.push('var E=' + JSON.stringify(ENTRIES) + ';');
+  lines.push('console.log("MBC Import: " + E.length + " entries");');
+  lines.push('for(var i=0;i<S.length;i++){var r=await fetch(U+"/rest/v1/bingo_seasons?id=eq."+S[i].id+"&year=eq.2026",{method:"PATCH",headers:H,body:JSON.stringify({name:S[i].name,date_range:S[i].date_range,icon:S[i].icon,color:S[i].color,status:S[i].status,challenges:S[i].challenges})});console.log("season",S[i].id,r.ok?"OK":await r.text());}');
+  lines.push('await fetch(U+"/rest/v1/bingo_entries?season_id=eq.inverno",{method:"DELETE",headers:H});');
+  lines.push('await fetch(U+"/rest/v1/bingo_entries?season_id=eq.primavera",{method:"DELETE",headers:H});');
+  lines.push('console.log("deleted existing entries");');
+  lines.push('var ok=0,fail=0;');
+  lines.push('for(var j=0;j<E.length;j++){var r2=await fetch(U+"/rest/v1/bingo_entries",{method:"POST",headers:H,body:JSON.stringify(E[j])});if(r2.ok){ok++;}else{fail++;console.error("FAIL",E[j].member_name,E[j].season_id,E[j].square_index,await r2.text());}}');
+  lines.push('console.log("DONE: "+ok+" OK, "+fail+" FAILED");');
+  lines.push('})();');
+  return lines.join('\n');
+}
+
+function copyScript() {
+  var script = buildConsoleScript();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(script).then(function() {
+      document.getElementById('copied').style.display = 'block';
+      setTimeout(function() { document.getElementById('copied').style.display = 'none'; }, 4000);
+    });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = script;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    document.getElementById('copied').style.display = 'block';
+    setTimeout(function() { document.getElementById('copied').style.display = 'none'; }, 4000);
+  }
+}
+</script>
+</body>
+</html>
