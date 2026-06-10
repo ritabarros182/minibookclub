@@ -354,7 +354,7 @@ function EditBookForm({ books, meetings, onDone }) {
         headers: { ...H(), Prefer: 'return=minimal' },
         body: JSON.stringify(form),
       });
-      if (!r1.ok) throw new Error('Erro ao guardar livro: ' + r1.status);
+      if (!r1.ok) { const t = await r1.text(); throw new Error('Erro ao guardar livro: ' + r1.status + ' — ' + t); }
 
       // Guardar picker_name no meeting correspondente
       const meeting = meetings.find(m => m.book_id === bookId);
